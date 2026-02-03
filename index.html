@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>근본 RPG - 리마스터</title>
+    <title>클릭 RPG - 리마스터</title>
     <style>
         body { background: #121212; color: #dcdcdc; font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        #auth-screen { width: 100%; max-width: 350px; background: #1c1c1c; padding: 30px; border-radius: 10px; border: 1px solid #3a3a3a; margin-top: 50px; }
+        .auth-container { width: 100%; max-width: 350px; background: #1c1c1c; padding: 30px; border-radius: 10px; border: 1px solid #3a3a3a; margin-top: 50px; }
         #game { display: none; width: 100%; max-width: 450px; background: #1c1c1c; padding: 25px; border-radius: 5px; border: 2px solid #3a3a3a; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         input { width: 100%; padding: 12px; margin-bottom: 10px; background: #000; border: 1px solid #444; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; border: 1px solid #555; background: #333; color: #eee; font-weight: bold; cursor: pointer; transition: 0.1s; }
+        button { width: 100%; padding: 14px; border: 1px solid #555; background: #333; color: #eee; font-weight: bold; cursor: pointer; transition: 0.1s; border-radius: 4px; }
         button:hover { background: #444; }
         .stats { display: flex; justify-content: space-between; font-size: 15px; background: #252525; padding: 12px; border: 1px solid #444; margin-bottom: 15px; }
         .weapon-box { text-align: center; padding: 20px; background: #000; border: 1px solid #444; margin-bottom: 15px; }
@@ -21,29 +21,49 @@
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .atk-btn { background: #4b4b4b; grid-column: span 2; font-size: 18px; }
         #log { height: 100px; background: #080808; border: 1px solid #333; padding: 10px; font-size: 12px; overflow-y: auto; margin-top: 15px; color: #999; }
+        
+        /* 상성 가이드 표 */
+        .synergy-guide { background: #1a1a1a; padding: 10px; border: 1px solid #444; margin-bottom: 15px; font-size: 12px; }
+        .synergy-row { display: flex; justify-content: space-between; margin: 2px 0; }
+        .up { color: #55efc4; } .down { color: #ff7675; }
+
         .rank-Legendary { color: #f1c40f; text-shadow: 0 0 5px gold; }
         .type-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: #444; margin-right: 5px; color: #fff; }
         .m-tag { font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 5px; }
-        .tag-normal { background: #555; }
-        .tag-elite { background: #d35400; color: #fff; box-shadow: 0 0 8px #d35400; }
-        .tag-boss { background: #c0392b; color: #fff; box-shadow: 0 0 12px #c0392b; }
-        #prob-table { font-size: 11px; background: #222; padding: 10px; border: 1px solid #444; margin-top: 10px; display: none; width: 100%; box-sizing: border-box; }
-        .prob-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 4px 0; }
+        .tag-normal { background: #555; } .tag-elite { background: #d35400; } .tag-boss { background: #c0392b; }
     </style>
 </head>
 <body>
 
-<div id="auth-screen">
-    <h2 style="text-align: center;">RPG 접속</h2>
-    <input type="text" id="user-id" placeholder="아이디">
-    <input type="password" id="user-pw" placeholder="비밀번호">
-    <button onclick="handleAuth()">모험 시작</button>
+<div id="login-screen" class="auth-container">
+    <h2 style="text-align: center;">용사 로그인</h2>
+    <input type="text" id="login-id" placeholder="아이디">
+    <input type="password" id="login-pw" placeholder="비밀번호">
+    <button onclick="handleLogin()">로그인</button>
+    <p onclick="showScreen('signup-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">계정이 없으신가요? 회원가입</p>
+</div>
+
+<div id="signup-screen" class="auth-container" style="display:none;">
+    <h2 style="text-align: center;">신규 가입</h2>
+    <input type="text" id="signup-id" placeholder="아이디">
+    <input type="password" id="signup-pw" placeholder="비밀번호">
+    <input type="password" id="signup-pw-confirm" placeholder="비밀번호 확인">
+    <button onclick="handleSignup()" style="background: #2d3436;">가입하기</button>
+    <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">이미 계정이 있나요? 로그인</p>
 </div>
 
 <div id="game">
     <div class="stats">
         <span>💰 <b id="gold">0</b></span>
         <span>⚔️ <b id="atk">0</b></span>
+    </div>
+
+    <div class="synergy-guide">
+        <div style="font-weight:bold; color:#f1c40f; margin-bottom:5px; text-align:center;">[ 무기 상성 가이드 ]</div>
+        <div class="synergy-row"><span>🗡️ 칼 → <small>격투</small></span> <span class="up">2.0x</span> | <span>🗡️ 칼 → <small>활</small></span> <span class="down">0.5x</span></div>
+        <div class="synergy-row"><span>🏹 활 → <small>지팡이</small></span> <span class="up">2.0x</span> | <span>🏹 활 → <small>격투</small></span> <span class="down">0.5x</span></div>
+        <div class="synergy-row"><span>🪄 지팡이 → <small>칼</small></span> <span class="up">2.0x</span> | <span>🪄 지팡이 → <small>격투</small></span> <span class="down">0.5x</span></div>
+        <div class="synergy-row"><span>🥊 격투 → <small>활</small></span> <span class="up">2.0x</span> | <span>🥊 격투 → <small>지팡이</small></span> <span class="down">0.5x</span></div>
     </div>
 
     <div class="weapon-box">
@@ -53,7 +73,7 @@
     </div>
 
     <div class="monster-area">
-        <div id="m-badge" class="m-tag tag-normal">일반</div>
+        <div id="m-badge" class="m-tag tag-normal">NORMAL</div>
         <div id="m-name" style="font-size:18px; font-weight:bold;">몬스터</div>
         <div id="m-weak" style="font-size:11px; color:#ff7675; margin-top:5px;">분석중...</div>
         <div class="hp-bar"><div id="hp-fill"></div></div>
@@ -64,20 +84,11 @@
         <button onclick="enchant()">🔥 강화</button>
         <button onclick="gacha()">✨ 발굴</button>
         <button onclick="toggleInv()">🎒 가방</button>
-        <button onclick="toggleProb()">📊 확률표</button>
-        <button onclick="logout()" style="grid-column: span 2; margin-top: 10px; background: #222; font-size: 11px;">로그아웃</button>
-    </div>
-
-    <div id="prob-table">
-        <div style="font-weight:bold; color:#f1c40f; margin-bottom:5px;">[시스템 확률 정보]</div>
-        <div class="prob-row"><span>강화 성공률 (+20강까지)</span> <span>90% ~ 2%</span></div>
-        <div class="prob-row" style="color:#d35400;"><span>정예 몬스터 (2%)</span> <span>HP 1.5배 / 보상 2배</span></div>
-        <div class="prob-row" style="color:#c0392b;"><span>보스 몬스터 (매 5LV)</span> <span>HP 3배 / 보상 5배</span></div>
-        <div class="prob-row"><span>상성 유리 / 불리</span> <span>2.0x / 0.5x</span></div>
+        <button onclick="logout()">로그아웃</button>
     </div>
 
     <div id="inventory" class="inventory"><div id="inv-list"></div></div>
-    <div id="log">> 환영합니다.</div>
+    <div id="log">> 모험을 시작할 준비가 되었습니다.</div>
 </div>
 
 <script>
@@ -95,22 +106,35 @@
         "격투": { "활": 2.0, "지팡이": 0.5 }
     };
 
-    const monsterNames = ["슬라임", "고블린", "박쥐", "좀비", "스켈레톤", "거미", "오크", "도적", "하피"];
-    const bossNames = ["데스 나이트", "메두사", "이프리트", "히드라", "고대 드래곤"];
+    function showScreen(id) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('signup-screen').style.display = 'none';
+        document.getElementById('game').style.display = 'none';
+        document.getElementById(id).style.display = 'block';
+    }
 
-    function handleAuth() {
-        const id = document.getElementById('user-id').value;
-        const pw = document.getElementById('user-pw').value;
-        if(!id || !pw) return;
+    function handleSignup() {
+        const id = document.getElementById('signup-id').value.trim();
+        const pw = document.getElementById('signup-pw').value;
+        const pwConfirm = document.getElementById('signup-pw-confirm').value;
 
-        // 아이디별 고유 키값 (버전 관리 포함)
-        const key = `rpg_v4_${id}`;
-        let stored = JSON.parse(localStorage.getItem(key));
+        if(!id || !pw) return alert("아이디와 비밀번호를 입력해주세요.");
+        if(pw !== pwConfirm) return alert("비밀번호가 일치하지 않습니다!");
+        if(localStorage.getItem(`rpg_v5_user_${id}`)) return alert("이미 존재하는 아이디입니다.");
 
-        if(!stored) {
-            stored = { pw: pw, gameData: null };
-            localStorage.setItem(key, JSON.stringify(stored));
-        } else if(stored.pw !== pw) return alert("비밀번호 불일치!");
+        const userData = { pw: pw, gameData: null };
+        localStorage.setItem(`rpg_v5_user_${id}`, JSON.stringify(userData));
+        alert("회원가입이 완료되었습니다! 로그인해주세요.");
+        showScreen('login-screen');
+    }
+
+    function handleLogin() {
+        const id = document.getElementById('login-id').value.trim();
+        const pw = document.getElementById('login-pw').value;
+        const stored = JSON.parse(localStorage.getItem(`rpg_v5_user_${id}`));
+
+        if(!stored) return alert("존재하지 않는 계정입니다.");
+        if(stored.pw !== pw) return alert("비밀번호가 틀렸습니다.");
 
         currentUser = id;
         state = stored.gameData || {
@@ -120,9 +144,8 @@
             mType: "격투"
         };
         if(!state.equippedId) state.equippedId = state.inventory[0].id;
-
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
+        
+        showScreen('game');
         resetMonster();
         updateUI();
     }
@@ -130,28 +153,24 @@
     function resetMonster() {
         isBoss = state.monsterLvl % 5 === 0;
         isElite = !isBoss && Math.random() < 0.02;
-
         let baseHp = 50 + (state.monsterLvl * 40);
-        let badge = document.getElementById('m-badge');
         
         if (isBoss) {
             maxHp = baseHp * 3;
-            badge.innerText = "BOSS";
-            badge.className = "m-tag tag-boss";
-            document.getElementById('m-name').innerText = bossNames[Math.min(Math.floor(state.monsterLvl/5)-1, bossNames.length-1)];
+            document.getElementById('m-badge').className = "m-tag tag-boss";
+            document.getElementById('m-badge').innerText = "BOSS";
         } else if (isElite) {
             maxHp = baseHp * 1.5;
-            badge.innerText = "ELITE";
-            badge.className = "m-tag tag-elite";
-            document.getElementById('m-name').innerText = "정예 " + monsterNames[Math.floor(Math.random() * monsterNames.length)];
+            document.getElementById('m-badge').className = "m-tag tag-elite";
+            document.getElementById('m-badge').innerText = "ELITE";
         } else {
             maxHp = baseHp;
-            badge.innerText = "NORMAL";
-            badge.className = "m-tag tag-normal";
-            document.getElementById('m-name').innerText = monsterNames[Math.floor(Math.random() * monsterNames.length)];
+            document.getElementById('m-badge').className = "m-tag tag-normal";
+            document.getElementById('m-badge').innerText = "NORMAL";
         }
         curHp = maxHp;
         state.mType = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
+        document.getElementById('m-name').innerText = (isBoss ? "심연의 수호자" : (isElite ? "정예 " : "") + "몬스터") + ` (Lv.${state.monsterLvl})`;
     }
 
     function attack() {
@@ -161,13 +180,11 @@
         
         curHp -= damage;
         if(curHp <= 0) {
-            let reward = (20 + state.monsterLvl * 10);
-            if(isBoss) reward *= 5;
-            else if(isElite) reward *= 2;
+            let reward = (20 + state.monsterLvl * 10) * (isBoss ? 5 : (isElite ? 2 : 1));
             state.gold += reward;
             state.monsterLvl++;
             resetMonster();
-            log(`처치 완료! +${reward}G 획득`);
+            log(`처치! ${reward}G 획득`);
         }
         updateUI();
     }
@@ -182,7 +199,7 @@
         document.getElementById('w-name').innerText = weapon.name;
         document.getElementById('w-type').innerText = weapon.type;
         document.getElementById('w-enchant').innerText = "+" + weapon.enchant;
-        document.getElementById('m-weak').innerHTML = `몬스터 속성: <b>[${state.mType}]</b> (${ratio}x)`;
+        document.getElementById('m-weak').innerHTML = `몬스터 타입: <b>[${state.mType}]</b> (${ratio}x 데미지)`;
         document.getElementById('hp-fill').style.width = Math.max(0, (curHp / maxHp * 100)) + "%";
         
         renderInv();
@@ -191,15 +208,13 @@
 
     function enchant() {
         let weapon = state.inventory.find(i => i.id === state.equippedId);
-        if(weapon.enchant >= 20) return log("최대 강화 도달.");
+        if(weapon.enchant >= 20) return log("최대 강화입니다.");
         let cost = 100 + (weapon.enchant * 100);
         if(state.gold < cost) return log("골드 부족.");
-        
         state.gold -= cost;
-        let chance = (weapon.enchant < 10) ? (90 - weapon.enchant * 6) : Math.max(2, 25 - (weapon.enchant - 10) * 3);
-        
+        let chance = (weapon.enchant < 10) ? (90 - weapon.enchant * 7) : Math.max(2, 25 - (weapon.enchant - 10) * 3);
         if(Math.random() * 100 < chance) { weapon.enchant++; log("강화 성공!"); }
-        else { log("강화 실패..."); }
+        else log("강화 실패.");
         updateUI();
     }
 
@@ -209,24 +224,20 @@
         const types = ["칼", "활", "지팡이", "격투"];
         const type = types[Math.floor(Math.random() * 4)];
         const isLegend = Math.random() < 0.03;
-        state.inventory.push({ 
-            id: Date.now(), 
-            name: isLegend ? "전설의 " + type : "철제 " + type, 
-            rank: isLegend ? "Legendary" : "Common", 
-            type: type, enchant: 0, power: isLegend ? 250 : 35 
-        });
-        log("무기 발굴 완료.");
+        state.inventory.push({ id: Date.now(), name: isLegend ? "전설의 " + type : "철제 " + type, rank: isLegend ? "Legendary" : "Common", type: type, enchant: 0, power: isLegend ? 250 : 35 });
+        log("발굴 완료!");
         updateUI();
     }
 
     function save() {
-        const key = `rpg_v4_${currentUser}`;
-        localStorage.setItem(key, JSON.stringify({ pw: JSON.parse(localStorage.getItem(key)).pw, gameData: state }));
+        const key = `rpg_v5_user_${currentUser}`;
+        const userData = JSON.parse(localStorage.getItem(key));
+        userData.gameData = state;
+        localStorage.setItem(key, JSON.stringify(userData));
     }
 
     function logout() { location.reload(); }
     function toggleInv() { const i = document.getElementById('inventory'); i.style.display = i.style.display === 'block' ? 'none' : 'block'; }
-    function toggleProb() { const p = document.getElementById('prob-table'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
     function log(m) { const l = document.getElementById('log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
     function renderInv() {
         document.getElementById('inv-list').innerHTML = state.inventory.map(item => `
