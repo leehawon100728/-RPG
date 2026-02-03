@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>최강의 클릭 RPG</title>
+    <title>최강의 근본 클릭 RPG</title>
     <style>
         body { background: #121212; color: #dcdcdc; font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .auth-container { width: 100%; max-width: 350px; background: #1c1c1c; padding: 30px; border-radius: 10px; border: 1px solid #3a3a3a; margin-top: 50px; }
@@ -13,11 +13,8 @@
         button:hover { background: #444; }
         .stats { display: flex; justify-content: space-between; font-size: 15px; background: #252525; padding: 12px; border: 1px solid #444; margin-bottom: 10px; }
         .world-info { text-align: center; color: #55efc4; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        
-        /* 확률표 상단 고정 */
         .prob-table { width: 100%; font-size: 10px; color: #aaa; margin-bottom: 10px; border-collapse: collapse; text-align: center; background: #1a1a1a; }
         .prob-table th, .prob-table td { border: 1px solid #333; padding: 4px; }
-        
         .weapon-box { text-align: center; padding: 15px; background: #000; border: 1px solid #444; margin-bottom: 15px; }
         .monster-area { background: #2d0000; padding: 15px; border: 1px solid #600; margin-bottom: 10px; text-align: center; }
         .hp-bar { height: 12px; background: #333; border: 1px solid #555; margin-top: 10px; overflow: hidden; }
@@ -27,10 +24,8 @@
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .atk-btn { background: #4b4b4b; grid-column: span 2; font-size: 18px; padding: 15px; }
         #log { height: 120px; background: #080808; border: 1px solid #333; padding: 10px; font-size: 12px; overflow-y: auto; margin-top: 15px; color: #999; }
-        
         .rank-일반 { color: #888; } .rank-희귀 { color: #3498db; } .rank-영웅 { color: #9b59b6; }
         .rank-신화 { color: #e74c3c; text-shadow: 0 0 5px red; } .rank-전설 { color: #f1c40f; text-shadow: 0 0 15px gold; font-weight: bold; }
-        
         .m-tag { font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 5px; }
         .tag-normal { background: #555; } .tag-mini { background: #e67e22; } .tag-boss { background: #c0392b; box-shadow: 0 0 10px #f00; }
         .sell-btn { background: #4a1c1c; color: #ff7675; border: 1px solid #600; padding: 3px 8px; cursor: pointer; }
@@ -42,20 +37,20 @@
     <h2 style="text-align: center;">🔥 최강의 클릭 RPG 🔥</h2>
     <input type="text" id="login-id" placeholder="아이디">
     <input type="password" id="login-pw" placeholder="비밀번호">
-    <button onclick="handleLogin()">로그인 (데이터 자동 통합)</button>
+    <button onclick="handleLogin()">로그인</button>
     <p onclick="showScreen('signup-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">신규 회원가입</p>
 </div>
 
 <div id="signup-screen" class="auth-container" style="display:none;">
     <h2 style="text-align: center;">회원가입</h2>
-    <input type="text" id="signup-id" placeholder="아이디">
+    <input type="text" id="signup-id" placeholder="사용할 아이디">
     <input type="password" id="signup-pw" placeholder="비밀번호">
     <button onclick="handleSignup()">가입 완료</button>
     <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">돌아가기</p>
 </div>
 
 <div id="game">
-    <div class="world-info" id="world-txt">로딩 중...</div>
+    <div class="world-info" id="world-txt">STORY 1 (1/100)</div>
     <div class="stats">
         <span>💰 <b id="gold">0</b></span>
         <span>⚔️ <b id="atk">0</b></span>
@@ -79,14 +74,14 @@
     <div class="monster-area">
         <div id="m-badge" class="m-tag tag-normal">NORMAL</div>
         <div id="m-name" style="font-weight:bold;">몬스터</div>
-        <div id="m-weak" style="font-size:11px; color:#ff7675;">분석 중...</div>
+        <div id="m-weak" style="font-size:11px; color:#ff7675;">타입 로딩...</div>
         <div class="hp-bar"><div id="hp-fill"></div></div>
     </div>
 
     <div id="gacha-info" style="font-size:10px; text-align:right; color:#888;">누적 뽑기: 0회</div>
     <div class="btn-grid">
         <button class="atk-btn" onclick="attack()">⚔️ 사냥하기</button>
-        <button onclick="enchant()" id="btn-enchant">🔥 강화 (비용 로딩...)</button>
+        <button onclick="enchant()" id="btn-enchant">🔥 강화</button>
         <button onclick="gacha('normal')" id="btn-gacha-n">✨ 일반뽑기</button>
         <button onclick="gacha('high')" id="btn-gacha-h" style="background:#4a3300;">💎 고급뽑기</button>
         <button onclick="toggleInv()">🎒 가방/판매</button>
@@ -96,17 +91,19 @@
     <div id="inventory" class="inventory"><div id="inv-list"></div></div>
     <div id="log">> 환영합니다!</div>
 
-    <div style="margin-top:15px; display:flex; gap:5px;">
-        <input type="text" id="cheat-code" style="flex:1; padding:10px; margin:0; font-size:12px; background:#000; border:1px solid #444; color:#fff;" placeholder="치트 코드 입력...">
-        <button onclick="applyCheat()" style="width:70px; padding:5px; font-size:12px; background:#333;">적용</button>
+    <div style="margin-top:15px; display:flex; flex-direction:column; gap:5px;">
+        <span style="font-size:11px; color:#888;">쿠폰/치트 입력</span>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="cheat-code" style="flex:1; padding:10px; margin:0; font-size:12px; background:#000; border:1px solid #444; color:#fff;" placeholder="코드를 입력하세요...">
+            <button onclick="applyCode()" style="width:70px; padding:5px; font-size:12px; background:#333;">확인</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const MASTER_KEY = "CLICK_RPG_FINAL_FIX_V2"; 
-    let currentUser = null;
-    let state = null;
-    let curHp = 0, maxHp = 0;
+    // 기존 유저의 데이터는 이 MASTER_KEY가 같으면 유지됩니다.
+    const MASTER_KEY = "CLICK_RPG_TOTAL_V3"; 
+    let currentUser = null, state = null, curHp = 0, maxHp = 0;
 
     const synergy = { "칼": { "격투": 2.0, "활": 0.5 }, "활": { "지팡이": 2.0, "격투": 0.5 }, "지팡이": { "칼": 2.0, "격투": 0.5 }, "격투": { "활": 2.0, "지팡이": 0.5 } };
     const ranks = {
@@ -123,7 +120,7 @@
     }
 
     function getAnyData(id) {
-        const keys = [MASTER_KEY, "CLICK_RPG_MASTER_KEY", "CLICK_RPG_PERMANENT_V1", "CLICK_RPG_MASTER_FINAL"];
+        const keys = [MASTER_KEY, "CLICK_RPG_FINAL_FIX_V2", "CLICK_RPG_MASTER_FINAL"];
         for(let k of keys) {
             let d = localStorage.getItem(k + id);
             if(d) return JSON.parse(d);
@@ -134,6 +131,7 @@
     function handleSignup() {
         const id = document.getElementById('signup-id').value.trim(), pw = document.getElementById('signup-pw').value;
         if(!id || !pw) return alert("빈칸을 채워주세요.");
+        if(getAnyData(id)) return alert("이미 존재하는 아이디입니다.");
         localStorage.setItem(MASTER_KEY + id, JSON.stringify({ pw: pw, gameData: null }));
         alert("가입 성공!"); showScreen('login-screen');
     }
@@ -141,17 +139,17 @@
     function handleLogin() {
         const id = document.getElementById('login-id').value.trim(), pw = document.getElementById('login-pw').value;
         let userData = getAnyData(id);
-        if(!userData || userData.pw !== pw) return alert("아이디 혹은 비밀번호가 틀립니다.");
+        if(!userData || userData.pw !== pw) return alert("로그인 정보 불일치");
         currentUser = id;
-        state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "시작의 검", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0 };
+        state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "초보 칼", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0, usedCoupons: [] };
+        if(!state.usedCoupons) state.usedCoupons = [];
         if(!state.equippedId) state.equippedId = state.inventory[0].id;
         showScreen('game'); resetMonster(true); updateUI();
     }
 
     function resetMonster(isNewType) {
         const sub = ((state.monsterLvl - 1) % 100) + 1;
-        const isWorldBoss = sub === 100;
-        const isMiniBoss = !isWorldBoss && (sub % 10 === 0);
+        const isWorldBoss = sub === 100, isMiniBoss = !isWorldBoss && (sub % 10 === 0);
         let baseHp = (100 + (state.monsterLvl * 65)) * Math.pow(3.5, Math.floor((state.monsterLvl-1)/100));
         const badge = document.getElementById('m-badge');
         if (isWorldBoss) { maxHp = baseHp * 8; badge.innerText = "STAGE BOSS"; badge.className = "m-tag tag-boss"; }
@@ -160,7 +158,7 @@
         curHp = maxHp;
         if(isNewType || isMiniBoss || isWorldBoss) state.mType = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
         document.getElementById('world-txt').innerText = `STORY ${Math.floor((state.monsterLvl-1)/100)+1} (${sub}/100)`;
-        document.getElementById('m-name').innerText = isWorldBoss ? `[최종보스] 월드 수호자` : (isMiniBoss ? `Lv.${state.monsterLvl} 네임드` : `Lv.${state.monsterLvl} 몬스터`);
+        document.getElementById('m-name').innerText = isWorldBoss ? `[보스] 월드 수호자` : (isMiniBoss ? `Lv.${state.monsterLvl} 네임드` : `Lv.${state.monsterLvl} 몬스터`);
     }
 
     function attack() {
@@ -170,61 +168,76 @@
         curHp -= (pwr + (weapon.enchant * (pwr * 0.6))) * ratio;
         if(curHp <= 0) {
             let mult = (state.monsterLvl % 100 === 0) ? 50 : ((state.monsterLvl % 10 === 0) ? 5 : 1);
-            let reward = Math.floor((40 + (state.monsterLvl * 3)) * mult);
-            state.gold += reward;
-            log(`사냥 성공! +${reward.toLocaleString()}G 획득💰`);
-            state.monsterLvl++;
-            resetMonster(state.monsterLvl % 10 === 1);
+            let rew = Math.floor((40 + (state.monsterLvl * 3)) * mult);
+            state.gold += rew;
+            log(`처치 완료! +${rew.toLocaleString()}G 획득💰`);
+            state.monsterLvl++; resetMonster(state.monsterLvl % 10 === 1);
         }
         updateUI();
     }
 
     function gacha(type) {
         const cost = (type === 'high' ? 10000 : 1000) + (state.gachaCount * (type === 'high' ? 1000 : 150));
-        if(state.gold < cost) return log("골드가 부족합니다!");
+        if(state.gold < cost) return log("골드 부족!");
         state.gold -= cost; state.gachaCount++;
         let rand = Math.random() * 100, selectedRank = "일반", accum = 0;
         for (let r in ranks) { accum += (type === 'high' ? ranks[r].chance_h : ranks[r].chance_n); if (rand <= accum) { selectedRank = r; break; } }
         const t = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
         state.inventory.push({ id: Date.now(), name: `${selectedRank}의 ${t}`, rank: selectedRank, type: t, enchant: 0 });
-        log(`[${selectedRank}] 등급 무기 획득!`);
         updateUI();
     }
 
     function enchant() {
         let weapon = state.inventory.find(i => i.id === state.equippedId);
         let cost = 300 + (weapon.enchant * 800);
-        if(state.gold < cost) return log("강화 비용이 부족합니다!");
+        if(state.gold < cost) return log("골드 부족!");
         state.gold -= cost;
-        if(Math.random() * 100 < (weapon.enchant < 10 ? 80 : 30)) { weapon.enchant++; log("✨ 강화 성공! 무기가 더 날카로워졌습니다."); } 
-        else log("❌ 강화 실패... 골드만 날렸습니다.");
+        if(Math.random() * 100 < (weapon.enchant < 10 ? 80 : 30)) { weapon.enchant++; log("강화 성공! ✨"); } 
+        else log("강화 실패. ❌");
+        updateUI();
+    }
+
+    function applyCode() {
+        const code = document.getElementById('cheat-code').value.trim();
+        if(!code) return;
+
+        if(code === "191016") {
+            state.gold += 1000000;
+            log("💰 치트 발동: 1,000,000G!");
+        } else if(code === "WELCOME_RPG" || code === "START_DASH") {
+            if(state.usedCoupons.includes(code)) {
+                alert("이미 사용한 쿠폰입니다.");
+            } else {
+                let gift = code === "WELCOME_RPG" ? 50000 : 200000;
+                state.gold += gift;
+                state.usedCoupons.push(code);
+                log(`🎁 쿠폰 적용: ${gift.toLocaleString()}G 획득!`);
+            }
+        } else {
+            log("❌ 잘못된 코드입니다.");
+        }
+        document.getElementById('cheat-code').value = "";
         updateUI();
     }
 
     function updateUI() {
         const weapon = state.inventory.find(i => i.id === state.equippedId);
         document.getElementById('gold').innerText = state.gold.toLocaleString();
-        let pwr = ranks[weapon.rank].power;
-        let ratio = synergy[weapon.type][state.mType] || 1.0;
+        let pwr = ranks[weapon.rank].power, ratio = synergy[weapon.type][state.mType] || 1.0;
         document.getElementById('atk').innerText = Math.floor((pwr + (weapon.enchant * (pwr * 0.6))) * ratio).toLocaleString();
         document.getElementById('w-name').innerText = weapon.name;
         document.getElementById('w-name').className = `rank-${weapon.rank}`;
         document.getElementById('w-rank-text').innerText = weapon.rank.toUpperCase();
         document.getElementById('w-rank-text').className = `rank-${weapon.rank}`;
         document.getElementById('w-enchant').innerText = "+" + weapon.enchant;
-        document.getElementById('m-weak').innerHTML = `몬스터 타입: [${state.mType}] (${ratio}x 피해)`;
+        document.getElementById('m-weak').innerHTML = `타입: [${state.mType}] (${ratio}x)`;
         document.getElementById('hp-fill').style.width = Math.max(0, (curHp / maxHp * 100)) + "%";
-        document.getElementById('gacha-info').innerText = `누적 뽑기 횟수: ${state.gachaCount}회`;
         
-        // 가격 및 비용 업데이트
-        const pn = 1000 + (state.gachaCount * 150);
-        const ph = 10000 + (state.gachaCount * 1000);
-        const enCost = 300 + (weapon.enchant * 800);
-        
+        const pn = 1000 + (state.gachaCount * 150), ph = 10000 + (state.gachaCount * 1000), enCost = 300 + (weapon.enchant * 800);
         document.getElementById('btn-gacha-n').innerText = `✨ 일반 (${pn.toLocaleString()}G)`;
         document.getElementById('btn-gacha-h').innerText = `💎 고급 (${ph.toLocaleString()}G)`;
         document.getElementById('btn-enchant').innerText = `🔥 강화 (${enCost.toLocaleString()}G)`;
-        
+        document.getElementById('gacha-info').innerText = `누적 뽑기: ${state.gachaCount}회`;
         renderInv(); save();
     }
 
@@ -234,21 +247,13 @@
         let sPrice = Math.floor((ranks[item.rank].price + item.enchant * 800) * 0.5);
         state.gold += sPrice;
         state.inventory = state.inventory.filter(i => i.id !== id);
-        log(`무기를 판매하여 ${sPrice.toLocaleString()}G를 얻었습니다.`);
         updateUI();
-    }
-
-    function applyCheat() {
-        const code = document.getElementById('cheat-code').value;
-        if(code === "191016") { state.gold += 1000000; log("💰 치트 발동: 1,000,000G가 지급되었습니다!"); updateUI(); }
-        else if(code === "leveljump") { state.monsterLvl += 10; resetMonster(true); updateUI(); }
-        document.getElementById('cheat-code').value = "";
     }
 
     function save() { if(currentUser) localStorage.setItem(MASTER_KEY + currentUser, JSON.stringify({ pw: JSON.parse(localStorage.getItem(MASTER_KEY+currentUser)).pw, gameData: state })); }
     function logout() { location.reload(); }
     function toggleInv() { const i = document.getElementById('inventory'); i.style.display = i.style.display === 'block' ? 'none' : 'block'; }
-    function log(m) { const l = document.getElementById('log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; l.scrollTop = 0; }
+    function log(m) { const l = document.getElementById('log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
     function renderInv() {
         document.getElementById('inv-list').innerHTML = state.inventory.map(item => `
             <div class="inv-item">
