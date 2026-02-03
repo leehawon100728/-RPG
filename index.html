@@ -19,12 +19,13 @@
         button:hover { background: #444; }
         .atk-btn { background: #4b4b4b; grid-column: span 2; margin-bottom: 5px; }
         
-        /* 확률표 스타일 */
-        .info-panel { width: 100%; max-width: 400px; margin-top: 20px; background: #1c1c1c; padding: 15px; border: 1px solid #3a3a3a; font-size: 12px; }
-        .info-title { font-weight: bold; color: #f1c40f; margin-bottom: 10px; border-bottom: 1px solid #3a3a3a; padding-bottom: 5px; }
-        .prob-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        /* 상세 확률표 팝업/패널 스타일 */
+        .info-panel { width: 100%; max-width: 400px; margin-top: 20px; background: #1c1c1c; padding: 15px; border: 1px solid #3a3a3a; display: none; }
+        .info-title { font-weight: bold; color: #f1c40f; margin-bottom: 10px; border-bottom: 1px solid #3a3a3a; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .prob-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
+        .prob-table th, .prob-table td { border: 1px solid #3a3a3a; padding: 5px; }
+        .prob-table th { background: #252525; }
 
-        /* 운영자 코드 입력창 */
         .admin-box { margin-top: 15px; display: flex; gap: 5px; }
         .admin-input { flex: 1; background: #000; border: 1px solid #444; color: #0f0; padding: 5px; font-family: monospace; }
         
@@ -53,6 +54,7 @@
         <button class="atk-btn" onclick="attack()">심연의 수련 (공격)</button>
         <button onclick="enchant()">강화 (100G)</button>
         <button onclick="gacha()">발굴 (500G)</button>
+        <button onclick="toggleInfo()" style="grid-column: span 2; background: #252525; margin-top: 5px; font-size: 12px;">🔍 상세 확률 정보 보기</button>
     </div>
     <div id="log">> 대륙에 오신 것을 환영합니다.</div>
     
@@ -62,17 +64,25 @@
     </div>
 </div>
 
-<div class="info-panel">
-    <div class="info-title">📊 강화 및 발굴 확률 정보</div>
-    <div class="prob-row"><span>발굴: 전설(Legendary)</span> <span style="color:#f1c40f">1%</span></div>
-    <div class="prob-row"><span>발굴: 서사(Epic)</span> <span style="color:#9b59b6">6%</span></div>
-    <div class="prob-row"><span>발굴: 희귀(Rare)</span> <span style="color:#3498db">18%</span></div>
-    <div class="prob-row"><span>강화 성공률:</span> <span>80% ~ 10% (강화도 비례)</span></div>
-    <div class="prob-row" style="color: #888;">* +5강부터 실패 시 하락폭 증가</div>
+<div id="infoPanel" class="info-panel">
+    <div class="info-title"><span>📊 강화 상세 확률표</span> <span style="cursor:pointer" onclick="toggleInfo()">[닫기]</span></div>
+    <table class="prob-table">
+        <thead>
+            <tr><th>강화 단계</th><th>성공 확률</th><th>실패 시 패널티</th></tr>
+        </thead>
+        <tbody id="probBody">
+            </tbody>
+    </table>
+    <div class="info-title" style="margin-top:15px;"><span>✨ 유물 발굴 확률</span></div>
+    <table class="prob-table">
+        <tr><td>Legendary</td><td>1%</td></tr>
+        <tr><td>Epic</td><td>6%</td></tr>
+        <tr><td>Rare</td><td>18%</td></tr>
+        <tr><td>Common</td><td>75%</td></tr>
+    </table>
 </div>
 
 <script>
-    // 기본 데이터 (저장 기능 포함)
     let state = JSON.parse(localStorage.getItem('rpg_save')) || {
         gold: 0,
         baseAtk: 15,
@@ -87,10 +97,40 @@
         Legendary: { color: "rank-legend", power: 400 }
     };
 
+    // 정확한 단계별 확률 정의 (0강~15강 이상)
+    const enchantProbs = [
+        { step: "0 → 1", chance: 100, penalty: "없음" },
+        { step: "1 → 2", chance: 90, penalty: "없음" },
+        { step: "2 → 3", chance: 80, penalty: "없음" },
+        { step: "3 → 4", chance: 70, penalty: "단계 하락 (-1)" },
+        { step: "4 → 5", chance: 60, penalty: "단계 하락 (-1)" },
+        { step: "5 → 6", chance: 50, penalty: "단계 하락 (-1)" },
+        { step: "6 → 7", chance: 40, penalty: "단계 하락 (-1)" },
+        { step: "7 → 8", chance: 30, penalty: "단계 하락 (-1)" },
+        { step: "8 → 9", chance: 20, penalty: "단계 하락 (-1)" },
+        { step: "9 → 10", chance: 15, penalty: "단계 하락 (-2)" },
+        { step: "10 → 11", chance: 10, penalty: "단계 하락 (-2)" },
+        { step: "11 → 12", chance: 7, penalty: "단계 하락 (-3)" },
+        { step: "12 → 13", chance: 5, penalty: "단계 하락 (-3)" },
+        { step: "13 → 14", chance: 3, penalty: "단계 하락 (-4)" },
+        { step: "14 → 15", chance: 1, penalty: "단계 하락 (-5)" }
+    ];
+
     let curHp = 50 + (state.monsterLvl * 40);
 
-    function saveGame() {
-        localStorage.setItem('rpg_save', JSON.stringify(state));
+    function saveGame() { localStorage.setItem('rpg_save', JSON.stringify(state)); }
+
+    function toggleInfo() {
+        const panel = document.getElementById('infoPanel');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        if(panel.style.display === 'block') renderProbTable();
+    }
+
+    function renderProbTable() {
+        const body = document.getElementById('probBody');
+        body.innerHTML = enchantProbs.map(p => `
+            <tr><td>${p.step}</td><td>${p.chance}%</td><td>${p.penalty}</td></tr>
+        `).join('');
     }
 
     function updateUI() {
@@ -98,7 +138,6 @@
         let totalAtk = state.baseAtk + state.weapon.power + (state.weapon.enchant * (state.weapon.power * 0.2));
         document.getElementById('atk').innerText = Math.floor(totalAtk).toLocaleString();
         document.getElementById('w-name').innerText = state.weapon.name;
-        document.getElementById('w-rank').innerText = state.weapon.rank.toUpperCase();
         document.getElementById('w-rank').className = ranks[state.weapon.rank].color;
         document.getElementById('w-enchant').innerText = "+" + state.weapon.enchant;
         
@@ -132,12 +171,22 @@
         let cost = 100 + (state.weapon.enchant * 50);
         if (state.gold < cost) return log("골드가 부족합니다.");
         state.gold -= cost;
-        let chance = Math.max(0.1, 0.8 - (state.weapon.enchant * 0.08));
-        if (Math.random() < chance) {
+
+        // 실제 확률 로직 적용
+        let currentStep = Math.min(state.weapon.enchant, 14);
+        let chance = enchantProbs[currentStep].chance;
+        
+        if (Math.random() * 100 < chance) {
             state.weapon.enchant++;
             log(`강화 성공! (+${state.weapon.enchant})`);
         } else {
-            state.weapon.enchant = state.weapon.enchant > 5 ? state.weapon.enchant - 2 : Math.max(0, state.weapon.enchant - 1);
+            // 실패 패널티 로직
+            if (state.weapon.enchant >= 14) state.weapon.enchant -= 5;
+            else if (state.weapon.enchant >= 11) state.weapon.enchant -= 3;
+            else if (state.weapon.enchant >= 9) state.weapon.enchant -= 2;
+            else if (state.weapon.enchant >= 3) state.weapon.enchant -= 1;
+            
+            state.weapon.enchant = Math.max(0, state.weapon.enchant);
             log("강화 실패! 수치가 하락했습니다.");
         }
         updateUI();
@@ -156,17 +205,14 @@
         updateUI();
     }
 
-    // 운영자 코드 확인 함수
     function checkAdminCode() {
         const code = document.getElementById('adminCode').value;
         if (code === "27272727") {
             state.gold += 100000;
-            log("📢 [운영자] 치트 코드가 적용되었습니다! +100,000G");
-            document.getElementById('adminCode').value = ""; // 입력창 비우기
+            log("📢 [운영자] 치트 적용: +100,000G");
+            document.getElementById('adminCode').value = "";
             updateUI();
-        } else {
-            log("❌ 잘못된 코드입니다.");
-        }
+        } else { log("❌ 잘못된 코드입니다."); }
     }
 
     updateUI();
