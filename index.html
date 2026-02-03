@@ -14,7 +14,6 @@
         .stats { display: flex; justify-content: space-between; font-size: 15px; background: #252525; padding: 12px; border: 1px solid #444; margin-bottom: 10px; }
         .world-info { text-align: center; color: #55efc4; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
         
-        /* 확률표 상단 고정 */
         .prob-table { width: 100%; font-size: 10px; color: #aaa; margin-bottom: 10px; border-collapse: collapse; text-align: center; background: #1a1a1a; }
         .prob-table th, .prob-table td { border: 1px solid #333; padding: 4px; }
         
@@ -40,10 +39,10 @@
 <body>
 
 <div id="login-screen" class="auth-container">
-    <h2 style="text-align: center;">클릭 RPG 통합</h2>
+    <h2 style="text-align: center;">클릭 RPG 통합판</h2>
     <input type="text" id="login-id" placeholder="아이디">
     <input type="password" id="login-pw" placeholder="비밀번호">
-    <button onclick="handleLogin()">로그인 (데이터 통합)</button>
+    <button onclick="handleLogin()">로그인 (데이터 불러오기)</button>
     <p onclick="showScreen('signup-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">신규 회원가입</p>
 </div>
 
@@ -52,11 +51,11 @@
     <input type="text" id="signup-id" placeholder="아이디">
     <input type="password" id="signup-pw" placeholder="비밀번호">
     <button onclick="handleSignup()">가입 완료</button>
-    <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">로그인으로 이동</p>
+    <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">돌아가기</p>
 </div>
 
 <div id="game">
-    <div class="world-info" id="world-txt">로딩 중...</div>
+    <div class="world-info" id="world-txt">STORY 1 (1/100)</div>
     <div class="stats">
         <span>💰 <b id="gold">0</b></span>
         <span>⚔️ <b id="atk">0</b></span>
@@ -95,7 +94,7 @@
     </div>
 
     <div id="inventory" class="inventory"><div id="inv-list"></div></div>
-    <div id="log">> 환영합니다.</div>
+    <div id="log">> 접속 완료.</div>
 
     <div style="margin-top:15px; display:flex; gap:5px;">
         <input type="text" id="cheat-code" style="flex:1; padding:5px; margin:0; font-size:12px;" placeholder="코드...">
@@ -104,7 +103,7 @@
 </div>
 
 <script>
-    const MASTER_KEY = "CLICK_RPG_MASTER"; // 앞으로 이 키로만 저장합니다.
+    const MASTER_KEY = "CLICK_RPG_MASTER_KEY"; 
     let currentUser = null;
     let state = null;
     let curHp = 0, maxHp = 0;
@@ -123,12 +122,12 @@
         document.getElementById(id).style.display = 'block';
     }
 
-    // 흩어진 과거 데이터를 찾는 마법의 함수
-    function findLegacyData(id) {
-        const legacyKeys = ["click_rpg_v9_", "click_rpg_v10_", "click_rpg_v11_", "click_rpg_v12_", "CLICK_RPG_FINAL_", "CLICK_RPG_PERMANENT_V1"];
-        for (let key of legacyKeys) {
-            let data = localStorage.getItem(key + id);
-            if (data) return JSON.parse(data);
+    // 모든 구버전 키를 검색해서 데이터를 가져오는 통합 함수
+    function getAnyData(id) {
+        const keys = [MASTER_KEY, "click_rpg_v11_", "click_rpg_v12_", "CLICK_RPG_FINAL_", "CLICK_RPG_PERMANENT_V1"];
+        for(let k of keys) {
+            let d = localStorage.getItem(k + id);
+            if(d) return JSON.parse(d);
         }
         return null;
     }
@@ -136,29 +135,23 @@
     function handleSignup() {
         const id = document.getElementById('signup-id').value.trim(), pw = document.getElementById('signup-pw').value;
         if(!id || !pw) return;
-        if(localStorage.getItem(MASTER_KEY + id)) return alert("이미 존재함");
+        if(localStorage.getItem(MASTER_KEY + id)) return alert("중복 아이디");
         localStorage.setItem(MASTER_KEY + id, JSON.stringify({ pw: pw, gameData: null }));
-        alert("가입 완료!"); showScreen('login-screen');
+        alert("가입 성공!"); showScreen('login-screen');
     }
 
     function handleLogin() {
         const id = document.getElementById('login-id').value.trim(), pw = document.getElementById('login-pw').value;
-        let userData = JSON.parse(localStorage.getItem(MASTER_KEY + id));
+        let userData = getAnyData(id);
 
-        // 마스터 저장소에 없으면 과거 기록 뒤지기
-        if(!userData) {
-            userData = findLegacyData(id);
-            if(userData) localStorage.setItem(MASTER_KEY + id, JSON.stringify(userData)); // 찾으면 통합 저장소로 이사
-        }
-
-        if(!userData || userData.pw !== pw) return alert("정보가 틀립니다.");
+        if(!userData || userData.pw !== pw) return alert("정보 불일치");
         
         currentUser = id;
         state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "시작 칼", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0 };
         if(!state.equippedId) state.equippedId = state.inventory[0].id;
         
         showScreen('game'); resetMonster(true); updateUI();
-        log("데이터를 성공적으로 통합했습니다.");
+        log("데이터 동기화 완료!");
     }
 
     function resetMonster(isNewType) {
@@ -175,13 +168,14 @@
         curHp = maxHp;
         if(isNewType || isMiniBoss || isWorldBoss) state.mType = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
         document.getElementById('world-txt').innerText = `STORY ${Math.floor((state.monsterLvl-1)/100)+1} (${sub}/100)`;
-        document.getElementById('m-name').innerText = isWorldBoss ? `[보스] 월드 가디언` : (isMiniBoss ? `Lv.${state.monsterLvl} 네임드` : `Lv.${state.monsterLvl} 몬스터`);
+        document.getElementById('m-name').innerText = isWorldBoss ? `[보스] 월드 수호자` : (isMiniBoss ? `Lv.${state.monsterLvl} 네임드` : `Lv.${state.monsterLvl} 몬스터`);
     }
 
     function attack() {
         const weapon = state.inventory.find(i => i.id === state.equippedId);
         let ratio = synergy[weapon.type][state.mType] || 1.0;
-        let damage = (ranks[weapon.rank].power + (weapon.enchant * (ranks[weapon.rank].power * 0.6))) * ratio;
+        let power = ranks[weapon.rank].power;
+        let damage = (power + (weapon.enchant * (power * 0.6))) * ratio;
         curHp -= damage;
         if(curHp <= 0) {
             let mult = (state.monsterLvl % 100 === 0) ? 50 : ((state.monsterLvl % 10 === 0) ? 5 : 1);
@@ -209,15 +203,16 @@
         let cost = 300 + (weapon.enchant * 800);
         if(state.gold < cost) return log("골드 부족!");
         state.gold -= cost;
-        if(Math.random() * 100 < (weapon.enchant < 10 ? 80 : 30)) { weapon.enchant++; log("성공!"); } else log("실패.");
+        if(Math.random() * 100 < (weapon.enchant < 10 ? 80 : 30)) { weapon.enchant++; log("강화 성공!"); } else log("강화 실패.");
         updateUI();
     }
 
     function updateUI() {
         const weapon = state.inventory.find(i => i.id === state.equippedId);
         document.getElementById('gold').innerText = state.gold.toLocaleString();
+        let power = ranks[weapon.rank].power;
         let ratio = synergy[weapon.type][state.mType] || 1.0;
-        document.getElementById('atk').innerText = Math.floor((ranks[weapon.rank].power + (weapon.enchant * (ranks[weapon.rank].power * 0.6))) * ratio).toLocaleString();
+        document.getElementById('atk').innerText = Math.floor((power + (weapon.enchant * (power * 0.6))) * ratio).toLocaleString();
         document.getElementById('w-name').innerText = weapon.name;
         document.getElementById('w-name').className = `rank-${weapon.rank}`;
         document.getElementById('w-rank-text').innerText = weapon.rank.toUpperCase();
@@ -240,7 +235,10 @@
     }
 
     function applyCheat() { if(document.getElementById('cheat-code').value === "191016") { state.gold += 1000000; updateUI(); } }
-    function save() { if(currentUser) localStorage.setItem(MASTER_KEY + currentUser, JSON.stringify({ pw: JSON.parse(localStorage.getItem(MASTER_KEY+currentUser)).pw, gameData: state })); }
+    function save() { if(currentUser) { 
+        const userData = JSON.parse(localStorage.getItem(MASTER_KEY + currentUser)) || getAnyData(currentUser);
+        localStorage.setItem(MASTER_KEY + currentUser, JSON.stringify({ pw: userData.pw, gameData: state })); 
+    } }
     function logout() { location.reload(); }
     function toggleInv() { const i = document.getElementById('inventory'); i.style.display = i.style.display === 'block' ? 'none' : 'block'; }
     function log(m) { const l = document.getElementById('log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
