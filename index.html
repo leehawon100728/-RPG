@@ -43,27 +43,19 @@
 
 <div id="signup-screen" class="auth-container" style="display:none;">
     <h2 style="text-align: center;">회원가입</h2>
-    <input type="text" id="signup-id" placeholder="사용할 아이디">
+    <input type="text" id="signup-id" placeholder="아이디">
     <input type="password" id="signup-pw" placeholder="비밀번호">
     <button onclick="handleSignup()">가입 완료</button>
     <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">돌아가기</p>
 </div>
 
 <div id="game">
-    <div class="world-info" id="world-txt">STORY 1 (1/100)</div>
+    <div class="world-info" id="world-txt">로딩 중...</div>
     <div class="stats">
         <span>💰 <b id="gold">0</b></span>
         <span>⚔️ <b id="atk">0</b></span>
+        <span>🎫 <b id="high-ticket">0</b></span>
     </div>
-
-    <table class="prob-table">
-        <tr><th>등급</th><th>일반</th><th>고급</th><th>기본 파워</th></tr>
-        <tr><td class="rank-일반">일반</td><td>65%</td><td>20%</td><td>35</td></tr>
-        <tr><td class="rank-희귀">희귀</td><td>25%</td><td>30%</td><td>90</td></tr>
-        <tr><td class="rank-영웅">영웅</td><td>8%</td><td>25%</td><td>220</td></tr>
-        <tr><td class="rank-신화">신화</td><td>2%</td><td>18%</td><td>600</td></tr>
-        <tr><td class="rank-전설">전설</td><td>0%</td><td>7%</td><td>1800</td></tr>
-    </table>
 
     <div class="weapon-box">
         <div id="w-rank-text">RANK</div>
@@ -74,16 +66,15 @@
     <div class="monster-area">
         <div id="m-badge" class="m-tag tag-normal">NORMAL</div>
         <div id="m-name" style="font-weight:bold;">몬스터</div>
-        <div id="m-weak" style="font-size:11px; color:#ff7675;">타입 로딩...</div>
+        <div id="m-weak" style="font-size:11px; color:#ff7675;">분석 중...</div>
         <div class="hp-bar"><div id="hp-fill"></div></div>
     </div>
 
-    <div id="gacha-info" style="font-size:10px; text-align:right; color:#888;">누적 뽑기: 0회</div>
     <div class="btn-grid">
         <button class="atk-btn" onclick="attack()">⚔️ 사냥하기</button>
         <button onclick="enchant()" id="btn-enchant">🔥 강화</button>
         <button onclick="gacha('normal')" id="btn-gacha-n">✨ 일반뽑기</button>
-        <button onclick="gacha('high')" id="btn-gacha-h" style="background:#4a3300;">💎 고급뽑기</button>
+        <button onclick="gacha('high')" id="btn-gacha-h">💎 고급뽑기</button>
         <button onclick="toggleInv()">🎒 가방/판매</button>
         <button onclick="logout()" style="background:#222;">로그아웃</button>
     </div>
@@ -92,16 +83,15 @@
     <div id="log">> 환영합니다!</div>
 
     <div style="margin-top:15px; display:flex; flex-direction:column; gap:5px;">
-        <span style="font-size:11px; color:#888;">쿠폰/치트 입력</span>
+        <span style="font-size:11px; color:#888;">쿠폰/치트 코드 입력</span>
         <div style="display:flex; gap:5px;">
-            <input type="text" id="cheat-code" style="flex:1; padding:10px; margin:0; font-size:12px; background:#000; border:1px solid #444; color:#fff;" placeholder="코드를 입력하세요...">
+            <input type="text" id="code-input" style="flex:1; padding:10px; margin:0; font-size:12px; background:#000; border:1px solid #444; color:#fff;" placeholder="코드를 입력하세요...">
             <button onclick="applyCode()" style="width:70px; padding:5px; font-size:12px; background:#333;">확인</button>
         </div>
     </div>
 </div>
 
 <script>
-    // 기존 유저의 데이터는 이 MASTER_KEY가 같으면 유지됩니다.
     const MASTER_KEY = "CLICK_RPG_TOTAL_V3"; 
     let currentUser = null, state = null, curHp = 0, maxHp = 0;
 
@@ -139,10 +129,11 @@
     function handleLogin() {
         const id = document.getElementById('login-id').value.trim(), pw = document.getElementById('login-pw').value;
         let userData = getAnyData(id);
-        if(!userData || userData.pw !== pw) return alert("로그인 정보 불일치");
+        if(!userData || userData.pw !== pw) return alert("아이디 혹은 비밀번호가 틀립니다.");
         currentUser = id;
-        state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "초보 칼", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0, usedCoupons: [] };
+        state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "초보 칼", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0, usedCoupons: [], highTickets: 0 };
         if(!state.usedCoupons) state.usedCoupons = [];
+        if(state.highTickets === undefined) state.highTickets = 0;
         if(!state.equippedId) state.equippedId = state.inventory[0].id;
         showScreen('game'); resetMonster(true); updateUI();
     }
@@ -171,15 +162,28 @@
             let rew = Math.floor((40 + (state.monsterLvl * 3)) * mult);
             state.gold += rew;
             log(`처치 완료! +${rew.toLocaleString()}G 획득💰`);
+            
+            // [100번째 보스 보상 추가]
+            if(state.monsterLvl % 100 === 0) {
+                state.highTickets += 1;
+                log(`💎 스테이지 보스 처치 보상: 고급 뽑기권 1장 지급!`);
+            }
+
             state.monsterLvl++; resetMonster(state.monsterLvl % 10 === 1);
         }
         updateUI();
     }
 
     function gacha(type) {
-        const cost = (type === 'high' ? 10000 : 1000) + (state.gachaCount * (type === 'high' ? 1000 : 150));
-        if(state.gold < cost) return log("골드 부족!");
-        state.gold -= cost; state.gachaCount++;
+        if(type === 'high' && state.highTickets > 0) {
+            state.highTickets--;
+            log("🎫 고급 뽑기권을 사용하여 무기를 뽑습니다!");
+        } else {
+            const cost = (type === 'high' ? 10000 : 1000) + (state.gachaCount * (type === 'high' ? 1000 : 150));
+            if(state.gold < cost) return log("골드 부족!");
+            state.gold -= cost;
+        }
+        state.gachaCount++;
         let rand = Math.random() * 100, selectedRank = "일반", accum = 0;
         for (let r in ranks) { accum += (type === 'high' ? ranks[r].chance_h : ranks[r].chance_n); if (rand <= accum) { selectedRank = r; break; } }
         const t = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
@@ -198,31 +202,32 @@
     }
 
     function applyCode() {
-        const code = document.getElementById('cheat-code').value.trim();
+        const code = document.getElementById('code-input').value.trim();
         if(!code) return;
 
-        if(code === "191016") {
+        // [Happy 코드 추가]
+        if(code === "Happy") {
+            if(state.usedCoupons.includes("Happy")) {
+                alert("이미 사용한 코드입니다.");
+            } else {
+                state.gold += 10000;
+                state.usedCoupons.push("Happy");
+                log("🎁 쿠폰 [Happy] 적용: 10,000G 획득!");
+            }
+        } else if(code === "191016") {
             state.gold += 1000000;
             log("💰 치트 발동: 1,000,000G!");
-        } else if(code === "WELCOME_RPG" || code === "START_DASH") {
-            if(state.usedCoupons.includes(code)) {
-                alert("이미 사용한 쿠폰입니다.");
-            } else {
-                let gift = code === "WELCOME_RPG" ? 50000 : 200000;
-                state.gold += gift;
-                state.usedCoupons.push(code);
-                log(`🎁 쿠폰 적용: ${gift.toLocaleString()}G 획득!`);
-            }
         } else {
-            log("❌ 잘못된 코드입니다.");
+            log("❌ 존재하지 않는 코드입니다.");
         }
-        document.getElementById('cheat-code').value = "";
+        document.getElementById('code-input').value = "";
         updateUI();
     }
 
     function updateUI() {
         const weapon = state.inventory.find(i => i.id === state.equippedId);
         document.getElementById('gold').innerText = state.gold.toLocaleString();
+        document.getElementById('high-ticket').innerText = state.highTickets;
         let pwr = ranks[weapon.rank].power, ratio = synergy[weapon.type][state.mType] || 1.0;
         document.getElementById('atk').innerText = Math.floor((pwr + (weapon.enchant * (pwr * 0.6))) * ratio).toLocaleString();
         document.getElementById('w-name').innerText = weapon.name;
@@ -235,9 +240,8 @@
         
         const pn = 1000 + (state.gachaCount * 150), ph = 10000 + (state.gachaCount * 1000), enCost = 300 + (weapon.enchant * 800);
         document.getElementById('btn-gacha-n').innerText = `✨ 일반 (${pn.toLocaleString()}G)`;
-        document.getElementById('btn-gacha-h').innerText = `💎 고급 (${ph.toLocaleString()}G)`;
+        document.getElementById('btn-gacha-h').innerText = state.highTickets > 0 ? `🎫 티켓사용 (${state.highTickets}장)` : `💎 고급 (${ph.toLocaleString()}G)`;
         document.getElementById('btn-enchant').innerText = `🔥 강화 (${enCost.toLocaleString()}G)`;
-        document.getElementById('gacha-info').innerText = `누적 뽑기: ${state.gachaCount}회`;
         renderInv(); save();
     }
 
