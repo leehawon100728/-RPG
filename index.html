@@ -1,271 +1,1554 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>최강의 근본 클릭 RPG</title>
+    <title>.RPG</title>
     <style>
-        body { background: #121212; color: #dcdcdc; font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .auth-container { width: 100%; max-width: 350px; background: #1c1c1c; padding: 30px; border-radius: 10px; border: 1px solid #3a3a3a; margin-top: 50px; }
-        #game { display: none; width: 100%; max-width: 450px; background: #1c1c1c; padding: 25px; border-radius: 5px; border: 2px solid #3a3a3a; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; background: #000; border: 1px solid #444; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; border: 1px solid #555; background: #333; color: #eee; font-weight: bold; cursor: pointer; border-radius: 4px; }
-        button:hover { background: #444; }
-        .stats { display: flex; justify-content: space-between; font-size: 15px; background: #252525; padding: 12px; border: 1px solid #444; margin-bottom: 10px; }
-        .world-info { text-align: center; color: #55efc4; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
-        .prob-table { width: 100%; font-size: 10px; color: #aaa; margin-bottom: 10px; border-collapse: collapse; text-align: center; background: #1a1a1a; }
-        .prob-table th, .prob-table td { border: 1px solid #333; padding: 4px; }
-        .weapon-box { text-align: center; padding: 15px; background: #000; border: 1px solid #444; margin-bottom: 15px; }
-        .monster-area { background: #2d0000; padding: 15px; border: 1px solid #600; margin-bottom: 10px; text-align: center; }
-        .hp-bar { height: 12px; background: #333; border: 1px solid #555; margin-top: 10px; overflow: hidden; }
-        #hp-fill { height: 100%; background: #c0392b; width: 100%; transition: 0.1s; }
-        .inventory { background: #151515; border: 1px solid #444; padding: 10px; margin-top: 15px; display: none; max-height: 200px; overflow-y: auto; }
-        .inv-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #333; font-size: 11px; }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .atk-btn { background: #4b4b4b; grid-column: span 2; font-size: 18px; padding: 15px; }
-        #log { height: 120px; background: #080808; border: 1px solid #333; padding: 10px; font-size: 12px; overflow-y: auto; margin-top: 15px; color: #999; }
-        .rank-일반 { color: #888; } .rank-희귀 { color: #3498db; } .rank-영웅 { color: #9b59b6; }
-        .rank-신화 { color: #e74c3c; text-shadow: 0 0 5px red; } .rank-전설 { color: #f1c40f; text-shadow: 0 0 15px gold; font-weight: bold; }
-        .m-tag { font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 5px; }
-        .tag-normal { background: #555; } .tag-mini { background: #e67e22; } .tag-boss { background: #c0392b; box-shadow: 0 0 10px #f00; }
-        .sell-btn { background: #4a1c1c; color: #ff7675; border: 1px solid #600; padding: 3px 8px; cursor: pointer; }
-    </style>
+        :root { --S: #ff4444; --A: #ffcc00; --B: #44ff44; --C: #888888; --gold: #f59e0b; }
+        body { background: #1a1a1a; color: white; font-family: sans-serif; margin: 0; padding: 0; }
+        .screen { display: none; padding: 20px; max-width: 600px; margin: auto; }
+        .active { display: block; }
+        button { cursor: pointer; padding: 10px; background: #444; color: white; border: 1px solid #666; border-radius: 5px; }
+        .unit { background: #333; padding: 10px; border-radius: 5px; border: 1px solid #555; cursor: pointer; margin: 5px 0; position: relative; }
+        .selected-unit { border: 2px solid var(--gold) !important; background: #443300 !important; }
+        .hp-bar { background: #555; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
+        .hp-fill { background: #ff4444; height: 100%; transition: 0.3s; }
+        #log { background: #000; height: 120px; overflow-y: auto; padding: 10px; font-size: 12px; border-radius: 5px; margin-top: 10px; display: flex; flex-direction: column; }
+      /* 아군과 적군 사이의 중앙 간격 및 전체 정렬 */
+.formation-grid { 
+    display: flex !important; 
+    flex-direction: row !important;
+    justify-content: center !important; 
+    align-items: center !important; 
+    gap: 150px !important; /* 중앙을 아주 넓게 벌림 */
+    margin-top: 50px;
+}
+
+/* 아군 영역: 후열이 왼쪽, 전열이 오른쪽 */
+#player-formation {
+    display: flex !important;
+    flex-direction: row !important; 
+    gap: 40px !important;
+}
+
+/* 적군 영역: 전열이 왼쪽(중앙쪽), 후열이 오른쪽 */
+#enemy-formation {
+    display: flex !important;
+    flex-direction: row !important; 
+    gap: 40px !important;
+}
+
+/* 세로 줄 설정 */
+.col { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 20px; 
+    width: 130px; /* 캐릭터 카드 너비 */
+    justify-content: center;
+    align-items: center;
+}
+
+/* 캐릭터 카드 크기 */
+.unit { 
+    width: 100%;
+    background: #333; 
+    padding: 20px !important; 
+    border-radius: 12px; 
+    border: 1px solid #555; 
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+/* 공격 애니메이션 및 필살기 효과 - */
+.attack-p { transform: translateX(50px); transition: 0.2s; z-index: 10; }
+.attack-e { transform: translateX(-50px); transition: 0.2s; z-index: 10; }
+.damaged { animation: shake 0.3s; border: 2px solid red !important; }
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-10px); }
+    100% { transform: translateX(0); }
+}
+.ultimate-ready { box-shadow: 0 0 15px #fff700; border: 2px solid #fff700 !important; }
+/* --- 소환 연출용 CSS (스타일 맨 아래 추가) --- */
+
+/* 1. 배경이 밤하늘처럼 어두워지는 효과 */
+@keyframes darken-sky {
+    0% { background: #222; }
+    100% { background: #050510; }
+}
+
+/* 2. 운석이 위에서 아래로 떨어지는 물리 효과 */
+@keyframes meteor-fall {
+    0% { transform: translateY(-100vh) scale(0.5); opacity: 1; filter: blur(2px); }
+    80% { opacity: 1; }
+    100% { transform: translateY(0) scale(1.2); opacity: 0; filter: blur(0px); }
+}
+
+/* 3. S급 당첨 시 화면 흔들림 (기존과 동일) */
+@keyframes s-rank-shake {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+/* 4. 영웅 이름 등장 효과 (기존과 동일) */
+@keyframes card-appear {
+    0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 운석 모양 스타일 (자바스크립트에서 사용) */
+.meteor {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, #ffcc00, #ff6600, transparent);
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ff6600;
+    z-index: 999;
+}   
+/* --- 후열 클릭 판정 개선 --- */
+.enemy-unit, .char-box, .unit-card { /* 사용자님의 코드에 맞는 클래스명으로 자동 적용되게 여러 개 넣었습니다 */
+    position: relative;
+    cursor: pointer;
+}
+
+/* 후열 캐릭터를 클릭 우선순위 1등으로 올림 */
+.back {
+    z-index: 99 !important; 
+}
+
+/* 전열 캐릭터는 그보다 아래로 */
+.front {
+    z-index: 10 !important;
+}
+
+/* 이미지의 투명한 여백 때문에 클릭이 방해받지 않도록 설정 */
+.enemy-unit img, .unit-card img {
+    pointer-events: none; 
+}
+ </style>
 </head>
 <body>
 
-<div id="login-screen" class="auth-container">
-    <h2 style="text-align: center;">🔥 최강의 클릭 RPG 🔥</h2>
-    <input type="text" id="login-id" placeholder="아이디">
-    <input type="password" id="login-pw" placeholder="비밀번호">
-    <button onclick="handleLogin()">로그인</button>
-    <p onclick="showScreen('signup-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">신규 회원가입</p>
-</div>
-
-<div id="signup-screen" class="auth-container" style="display:none;">
-    <h2 style="text-align: center;">회원가입</h2>
-    <input type="text" id="signup-id" placeholder="아이디">
-    <input type="password" id="signup-pw" placeholder="비밀번호">
-    <button onclick="handleSignup()">가입 완료</button>
-    <p onclick="showScreen('login-screen')" style="text-align:center; font-size:12px; color:#888; cursor:pointer; margin-top:15px;">돌아가기</p>
-</div>
-
-<div id="game">
-    <div class="world-info" id="world-txt">로딩 중...</div>
-    <div class="stats">
-        <span>💰 <b id="gold">0</b></span>
-        <span>⚔️ <b id="atk">0</b></span>
-        <span>🎫 <b id="high-ticket">0</b></span>
-    </div>
-
-    <div class="weapon-box">
-        <div id="w-rank-text">RANK</div>
-        <div><span id="w-type" style="font-size:10px; background:#444; padding:2px 5px; border-radius:3px;">TYPE</span> <b id="w-name" style="font-size:18px;">무기</b></div>
-        <div id="w-enchant" style="color: #4cd137; font-size: 20px; font-weight:bold;">+0</div>
-    </div>
-
-    <div class="monster-area">
-        <div id="m-badge" class="m-tag tag-normal">NORMAL</div>
-        <div id="m-name" style="font-weight:bold;">몬스터</div>
-        <div id="m-weak" style="font-size:11px; color:#ff7675;">분석 중...</div>
-        <div class="hp-bar"><div id="hp-fill"></div></div>
-    </div>
-
-    <div class="btn-grid">
-        <button class="atk-btn" onclick="attack()">⚔️ 사냥하기</button>
-        <button onclick="enchant()" id="btn-enchant">🔥 강화</button>
-        <button onclick="gacha('normal')" id="btn-gacha-n">✨ 일반뽑기</button>
-        <button onclick="gacha('high')" id="btn-gacha-h">💎 고급뽑기</button>
-        <button onclick="toggleInv()">🎒 가방/판매</button>
-        <button onclick="logout()" style="background:#222;">로그아웃</button>
-    </div>
-
-    <div id="inventory" class="inventory"><div id="inv-list"></div></div>
-    <div id="log">> 환영합니다!</div>
-
-    <div style="margin-top:15px; display:flex; flex-direction:column; gap:5px;">
-        <span style="font-size:11px; color:#888;">쿠폰/치트 코드 입력</span>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="code-input" style="flex:1; padding:10px; margin:0; font-size:12px; background:#000; border:1px solid #444; color:#fff;" placeholder="코드를 입력하세요...">
-            <button onclick="applyCode()" style="width:70px; padding:5px; font-size:12px; background:#333;">확인</button>
+    <div id="login-screen" class="screen active">
+        <h2>⚔️ RPG</h2>
+        <input type="text" id="uid" style="width:100%; padding:10px; margin-bottom:5px;" placeholder="아이디">
+        <input type="password" id="upw" style="width:100%; padding:10px;" placeholder="비밀번호">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="handleAuth('login')" style="flex:1">로그인</button>
+            <button onclick="handleAuth('signup')" style="flex:1; background:#444;">회원가입</button>
         </div>
     </div>
+
+    <div id="lobby-screen" class="screen">
+        <h2>🏠 로비</h2>
+        <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:15px;">
+            💎 다이아: <span id="crystal-count">0</span> | 💰 골드: <span id="gold-count">0</span><br>
+            ⚔️ 스테이지: <span id="stage-info">1</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="changeScreen('gacha-screen')">✨ 소환</button>
+            <button onclick="changeScreen('shop-screen')" style="background:var(--gold); color:black;">🛒 시장</button>
+            <button onclick="changeScreen('inventory-screen')">🛡️ 영웅/편성</button>
+            <button onclick="startBattle()" style="background:red;">⚔️ 전투 시작</button>
+                        <button onclick="changeScreen('ranking-screen')">🏆 랭킹</button>
+        </div>
+    </div>
+
+    <<div id="gacha-screen" class="screen">
+    <h2>✨ 소환 제단</h2>
+    
+    <div style="text-align:center; margin-bottom:10px;">
+        💎 <span id="gacha-crystals">0</span>
+    </div>
+
+    <div id="gacha-area" style="min-height:150px; background:#000; padding:10px; margin-bottom:15px; border-radius:10px; border: 1px solid #333; overflow: hidden; position: relative;">
+        <div style="color:#555; text-align:center; margin-top:60px;">준비 완료...</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:5px;">
+            <button onclick="executeGacha('normal', 1)" style="flex:1;">일반 1회 (100💎)</button>
+            <button onclick="executeGacha('normal', 11)" style="flex:2;">일반 11회 (1000💎)</button>
+        </div>
+        <div style="display:flex; gap:5px;">
+            <button onclick="executeGacha('high', 1)" style="flex:1; background:var(--gold); color:black; font-weight:bold;">고급 1회 (200💎)</button>
+            <button onclick="executeGacha('high', 11)" style="flex:2; background:var(--gold); color:black; font-weight:bold;">고급 11회 (2000💎)</button>
+        </div>
+    </div>
+
+    <div id="gacha-rate-info" style="background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 8px; padding: 12px; margin-top: 15px; font-size: 12px; color: #bbb; line-height: 1.6;">
+        <div style="text-align: center; color: var(--gold); font-weight: bold; margin-bottom: 8px; font-size: 14px;">🔮 소환 확률 정보</div>
+        <div style="display: flex; justify-content: space-around; text-align: center;">
+            <div style="flex: 1;">
+                <span style="color:white; font-weight:bold;">고급 소환</span><br>
+                <span style="color:var(--gold);">S급: 10%</span><br>
+                <span>A급: 30% / B급: 60%</span>
+            </div>
+            <div style="border-left: 1px solid #444; margin: 0 10px;"></div>
+            <div style="flex: 1;">
+                <span style="color:white; font-weight:bold;">일반 소환</span><br>
+                <span style="color:violet;">A급: 10%</span><br>
+                <span>B급: 40% / C급: 50%</span>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="changeScreen('lobby-screen')" style="width:100%; margin-top:15px; background:none; border: 1px solid #555; color: #888;">로비로 돌아가기</button>
 </div>
 
+    <<div id="shop-screen" class="screen">
+    <h2 style="color:var(--gold);">🛒 암시장</h2>
+    <div style="text-align:center; margin-bottom:10px;">
+        💰 <span id="shop-gold">0</span> | 💎 <span id="shop-crystals">0</span>
+    </div>
+    <div id="shop-timer" style="color:red; text-align:center; margin-bottom:10px; font-size:12px;"></div>
+    
+    <div id="special-offers" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;"></div>
+    
+    <div style="background: #222; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 15px;">
+        
+        <div>
+            <h4 style="margin: 0 0 10px 0; color:var(--gold);">💰 골드 즉시 충전 (무제한)</h4>
+            <button onclick="buyItem('gold_10k')" style="width:100%; text-align:left; margin-bottom:5px; background:#333; color:white; border:1px solid #444; padding:8px;">
+                💰 50,000 골드 (300💎)
+            </button>
+            <button onclick="buyItem('gold_50k')" style="width:100%; text-align:left; background:#333; color:white; border:1px solid #444; padding:8px;">
+                💰 250,000 골드 (1200💎) <span style="color:var(--gold); font-size:10px;">HOT!</span>
+            </button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0;">
+
+        <div>
+            <h4 style="margin: 0 0 10px 0; color:var(--gold);">🎫 쿠폰 번호 사용</h4>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="coupon-input" placeholder="코드를 입력하세요" 
+                       style="flex: 1; padding: 8px; background: #111; color: white; border: 1px solid #444; border-radius: 5px; font-size: 13px;">
+                <button onclick="useCoupon()" style="padding: 8px 15px; background: var(--gold); color: black; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="changeScreen('lobby-screen')" style="width:100%; margin-top:20px;">로비로 돌아가기</button>
+</div>
+
+    <div id="inventory-screen" class="screen">
+        <h2>🛡️ 영웅 및 편성</h2>
+        <div id="hero-list"></div>
+        <div id="hero-detail-panel" style="background:#222; padding:15px; border-radius:10px; margin-top:15px; display:none;">
+            <h3 id="detail-name" style="color:var(--gold)"></h3>
+            <div id="detail-desc" style="font-size:12px; background:#111; padding:10px;"></div>
+            <div id="detail-buttons" style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:5px;"></div>
+        </div>
+        <button onclick="changeScreen('lobby-screen')" style="width:100%; margin-top:10px;">로비로</button>
+    </div>
+
+    <div id="battle-screen" class="screen">
+        <div class="formation-grid">
+            <div id="player-formation" class="col"></div>
+            <div id="enemy-formation" class="col" style="flex-direction: row-reverse; display: flex; gap: 10px;"></div>
+        </div>
+        <div id="battle-controls" style="margin-top:15px;"></div>
+        <div id="log"></div>
+    </div>
+
+    <div id="dictionary-screen" class="screen">
+        <h2>📖 영웅 도감</h2>
+        <div id="dict-list" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+        <button onclick="changeScreen('lobby-screen')" style="margin-top:10px;">로비로</button>
+    </div>
+
+    <div id="ranking-screen" class="screen">
+        <h2>🏆 랭킹</h2>
+        <div id="ranking-list" style="background:#111; padding:15px;"></div>
+        <button onclick="changeScreen('lobby-screen')" style="margin-top:10px;">로비로</button>
+    </div>
+
 <script>
-    const MASTER_KEY = "CLICK_RPG_TOTAL_V3"; 
-    let currentUser = null, state = null, curHp = 0, maxHp = 0;
+    const DB_KEY = 'GAME_DATA_V12';
+    let usersDB = JSON.parse(localStorage.getItem(DB_KEY)) || {};
+    let currentUser = null;
+    let bData = { active: false, turnIdx: 0, pTeam: [], eTeam: [], selectingTarget: false };
+    let shopItems = [];
+    let nextRefresh = Date.now() + 600000;
 
-    const synergy = { "칼": { "격투": 2.0, "활": 0.5 }, "활": { "지팡이": 2.0, "격투": 0.5 }, "지팡이": { "칼": 2.0, "격투": 0.5 }, "격투": { "활": 2.0, "지팡이": 0.5 } };
-    const ranks = {
-        "일반": { power: 35, price: 150, chance_n: 65, chance_h: 20 },
-        "희귀": { power: 90, price: 400, chance_n: 25, chance_h: 30 },
-        "영웅": { power: 220, price: 1200, chance_n: 8, chance_h: 25 },
-        "신화": { power: 600, price: 4000, chance_n: 2, chance_h: 18 },
-        "전설": { power: 1800, price: 18000, chance_n: 0, chance_h: 7 }
-    };
-
-    function showScreen(id) {
-        ['login-screen', 'signup-screen', 'game'].forEach(s => document.getElementById(s).style.display = 'none');
-        document.getElementById(id).style.display = 'block';
+    const TEMPLATES = {
+    'S': { 
+        '이하원': { atk: 2500, hp: 10000, desc: "반격: 피격 시 30% 확률로 데미지 반사 (1성 이후 성급당 확률 +10%)" }, 
+        '탄지로': { atk: 2200, hp: 9000, desc: "재생: 매 턴 최대 체력의 10% 회복 (1성 이후 성급당 회복량 +5%)" }, 
+        '장화신은고양이': { atk: 1800, hp: 7500, desc: "위협: 적 전체 공격력 10% 감소 (1성 이후 성급당 감소량 +5% )" } 
+    },
+    'A': { 
+        '빅딜': { atk: 1100, hp: 5500, desc: "불사: 사망 시 1회 부활 (1성: 체력 20%로 부활 / 성급당 부활 체력 +20%)" }, 
+        '검객': { atk: 1300, hp: 4500, desc: "무효화: 5% 확률로 적 공격을 회피 (1성 이후 성급당 확률 +2.5%)" } 
+    },
+    'B': { 
+        '샌드백': { atk: 200, hp: 9000, desc: "딜은 약하지만 체력이 매우 높아 전위에 두기 좋습니다." }, 
+        'B급': { atk: 600, hp: 3500, desc: "평범한 능력을 가진 일반 전사입니다." } 
+    },
+    'C': { 
+        '들개': { atk: 300, hp: 2200, desc: "길거리의 야생 들개입니다." }, 
+        '이승재': { atk: 450, hp: 2100, desc: "그냥 폐급의 정석입니다. (기대하지 마세요)" } 
     }
+};
 
-    function getAnyData(id) {
-        const keys = [MASTER_KEY, "CLICK_RPG_FINAL_FIX_V2", "CLICK_RPG_MASTER_FINAL"];
-        for(let k of keys) {
-            let d = localStorage.getItem(k + id);
-            if(d) return JSON.parse(d);
-        }
-        return null;
-    }
 
-    function handleSignup() {
-        const id = document.getElementById('signup-id').value.trim(), pw = document.getElementById('signup-pw').value;
-        if(!id || !pw) return alert("빈칸을 채워주세요.");
-        if(getAnyData(id)) return alert("이미 존재하는 아이디입니다.");
-        localStorage.setItem(MASTER_KEY + id, JSON.stringify({ pw: pw, gameData: null }));
-        alert("가입 성공!"); showScreen('login-screen');
-    }
+    function saveDB() { localStorage.setItem(DB_KEY, JSON.stringify(usersDB)); }
 
-    function handleLogin() {
-        const id = document.getElementById('login-id').value.trim(), pw = document.getElementById('login-pw').value;
-        let userData = getAnyData(id);
-        if(!userData || userData.pw !== pw) return alert("아이디 혹은 비밀번호가 틀립니다.");
-        currentUser = id;
-        state = userData.gameData || { gold: 0, monsterLvl: 1, inventory: [{ id: Date.now(), name: "초보 칼", rank: "일반", type: "칼", enchant: 0 }], equippedId: null, mType: "격투", gachaCount: 0, usedCoupons: [], highTickets: 0 };
-        if(!state.usedCoupons) state.usedCoupons = [];
-        if(state.highTickets === undefined) state.highTickets = 0;
-        if(!state.equippedId) state.equippedId = state.inventory[0].id;
-        showScreen('game'); resetMonster(true); updateUI();
-    }
-
-    function resetMonster(isNewType) {
-        const sub = ((state.monsterLvl - 1) % 100) + 1;
-        const isWorldBoss = sub === 100, isMiniBoss = !isWorldBoss && (sub % 10 === 0);
-        let baseHp = (100 + (state.monsterLvl * 65)) * Math.pow(3.5, Math.floor((state.monsterLvl-1)/100));
-        const badge = document.getElementById('m-badge');
-        if (isWorldBoss) { maxHp = baseHp * 8; badge.innerText = "STAGE BOSS"; badge.className = "m-tag tag-boss"; }
-        else if (isMiniBoss) { maxHp = baseHp * 2.5; badge.innerText = "MINI BOSS"; badge.className = "m-tag tag-mini"; }
-        else { maxHp = baseHp; badge.innerText = "NORMAL"; badge.className = "m-tag tag-normal"; }
-        curHp = maxHp;
-        if(isNewType || isMiniBoss || isWorldBoss) state.mType = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
-        document.getElementById('world-txt').innerText = `STORY ${Math.floor((state.monsterLvl-1)/100)+1} (${sub}/100)`;
-        document.getElementById('m-name').innerText = isWorldBoss ? `[보스] 월드 수호자` : (isMiniBoss ? `Lv.${state.monsterLvl} 네임드` : `Lv.${state.monsterLvl} 몬스터`);
-    }
-
-    function attack() {
-        const weapon = state.inventory.find(i => i.id === state.equippedId);
-        let ratio = synergy[weapon.type][state.mType] || 1.0;
-        let pwr = ranks[weapon.rank].power;
-        curHp -= (pwr + (weapon.enchant * (pwr * 0.6))) * ratio;
-        if(curHp <= 0) {
-            let mult = (state.monsterLvl % 100 === 0) ? 50 : ((state.monsterLvl % 10 === 0) ? 5 : 1);
-            let rew = Math.floor((40 + (state.monsterLvl * 3)) * mult);
-            state.gold += rew;
-            log(`처치 완료! +${rew.toLocaleString()}G 획득💰`);
-            
-            // [100번째 보스 보상 추가]
-            if(state.monsterLvl % 100 === 0) {
-                state.highTickets += 1;
-                log(`💎 스테이지 보스 처치 보상: 고급 뽑기권 1장 지급!`);
-            }
-
-            state.monsterLvl++; resetMonster(state.monsterLvl % 10 === 1);
-        }
-        updateUI();
-    }
-
-    function gacha(type) {
-        if(type === 'high' && state.highTickets > 0) {
-            state.highTickets--;
-            log("🎫 고급 뽑기권을 사용하여 무기를 뽑습니다!");
+    function handleAuth(mode) {
+        const id = document.getElementById('uid').value, pw = document.getElementById('upw').value;
+        if(mode === 'signup') {
+            if(usersDB[id]) return alert("중복ID");
+            usersDB[id] = { id, pw, crystals: 2500, gold: 5000, stage: 1, inventory: [], shards: {} };
+            saveDB(); alert("가입 성공!");
         } else {
-            const cost = (type === 'high' ? 10000 : 1000) + (state.gachaCount * (type === 'high' ? 1000 : 150));
-            if(state.gold < cost) return log("골드 부족!");
-            state.gold -= cost;
+            if(usersDB[id] && usersDB[id].pw === pw) { currentUser = usersDB[id]; if(!currentUser.shards) currentUser.shards={}; updateUI(); changeScreen('lobby-screen'); }
+            else alert("실패");
         }
-        state.gachaCount++;
-        let rand = Math.random() * 100, selectedRank = "일반", accum = 0;
-        for (let r in ranks) { accum += (type === 'high' ? ranks[r].chance_h : ranks[r].chance_n); if (rand <= accum) { selectedRank = r; break; } }
-        const t = ["칼", "활", "지팡이", "격투"][Math.floor(Math.random() * 4)];
-        state.inventory.push({ id: Date.now(), name: `${selectedRank}의 ${t}`, rank: selectedRank, type: t, enchant: 0 });
-        updateUI();
-    }
-
-    function enchant() {
-        let weapon = state.inventory.find(i => i.id === state.equippedId);
-        let cost = 300 + (weapon.enchant * 800);
-        if(state.gold < cost) return log("골드 부족!");
-        state.gold -= cost;
-        if(Math.random() * 100 < (weapon.enchant < 10 ? 80 : 30)) { weapon.enchant++; log("강화 성공! ✨"); } 
-        else log("강화 실패. ❌");
-        updateUI();
-    }
-
-    function applyCode() {
-        const code = document.getElementById('code-input').value.trim();
-        if(!code) return;
-
-        // [Happy 코드 추가]
-        if(code === "Happy") {
-            if(state.usedCoupons.includes("Happy")) {
-                alert("이미 사용한 코드입니다.");
-            } else {
-                state.gold += 10000;
-                state.usedCoupons.push("Happy");
-                log("🎁 쿠폰 [Happy] 적용: 10,000G 획득!");
-            }
-        } else if(code === "191016") {
-            state.gold += 1000000;
-            log("💰 치트 발동: 1,000,000G!");
-        } else {
-            log("❌ 존재하지 않는 코드입니다.");
-        }
-        document.getElementById('code-input').value = "";
-        updateUI();
     }
 
     function updateUI() {
-        const weapon = state.inventory.find(i => i.id === state.equippedId);
-        document.getElementById('gold').innerText = state.gold.toLocaleString();
-        document.getElementById('high-ticket').innerText = state.highTickets;
-        let pwr = ranks[weapon.rank].power, ratio = synergy[weapon.type][state.mType] || 1.0;
-        document.getElementById('atk').innerText = Math.floor((pwr + (weapon.enchant * (pwr * 0.6))) * ratio).toLocaleString();
-        document.getElementById('w-name').innerText = weapon.name;
-        document.getElementById('w-name').className = `rank-${weapon.rank}`;
-        document.getElementById('w-rank-text').innerText = weapon.rank.toUpperCase();
-        document.getElementById('w-rank-text').className = `rank-${weapon.rank}`;
-        document.getElementById('w-enchant').innerText = "+" + weapon.enchant;
-        document.getElementById('m-weak').innerHTML = `타입: [${state.mType}] (${ratio}x)`;
-        document.getElementById('hp-fill').style.width = Math.max(0, (curHp / maxHp * 100)) + "%";
-        
-        const pn = 1000 + (state.gachaCount * 150), ph = 10000 + (state.gachaCount * 1000), enCost = 300 + (weapon.enchant * 800);
-        document.getElementById('btn-gacha-n').innerText = `✨ 일반 (${pn.toLocaleString()}G)`;
-        document.getElementById('btn-gacha-h').innerText = state.highTickets > 0 ? `🎫 티켓사용 (${state.highTickets}장)` : `💎 고급 (${ph.toLocaleString()}G)`;
-        document.getElementById('btn-enchant').innerText = `🔥 강화 (${enCost.toLocaleString()}G)`;
-        renderInv(); save();
+        if(!currentUser) return;
+        const cry = currentUser.crystals.toLocaleString();
+        const gld = currentUser.gold.toLocaleString();
+        document.getElementById('crystal-count').innerText = cry;
+        document.getElementById('gold-count').innerText = gld;
+        document.getElementById('stage-info').innerText = currentUser.stage;
+        if(document.getElementById('gacha-crystals')) document.getElementById('gacha-crystals').innerText = cry;
+        if(document.getElementById('shop-crystals')) document.getElementById('shop-crystals').innerText = cry;
+        if(document.getElementById('shop-gold')) document.getElementById('shop-gold').innerText = gld;
+        saveDB();
     }
 
-    function sellWeapon(id) {
-        if (state.inventory.length <= 1 || id === state.equippedId) return;
-        const item = state.inventory.find(i => i.id === id);
-        let sPrice = Math.floor((ranks[item.rank].price + item.enchant * 800) * 0.5);
-        state.gold += sPrice;
-        state.inventory = state.inventory.filter(i => i.id !== id);
+    function changeScreen(s) {
+        document.querySelectorAll('.screen').forEach(d => d.classList.remove('active'));
+        document.getElementById(s).classList.add('active');
+        if(s === 'inventory-screen') renderInventory();
+        if(s === 'dictionary-screen') renderDictionary();
+        if(s === 'ranking-screen') renderRanking();
+        if(s === 'shop-screen') { if(shopItems.length===0) refreshShop(); renderShop(); }
         updateUI();
     }
 
-    function save() { if(currentUser) localStorage.setItem(MASTER_KEY + currentUser, JSON.stringify({ pw: JSON.parse(localStorage.getItem(MASTER_KEY+currentUser)).pw, gameData: state })); }
-    function logout() { location.reload(); }
-    function toggleInv() { const i = document.getElementById('inventory'); i.style.display = i.style.display === 'block' ? 'none' : 'block'; }
-    function log(m) { const l = document.getElementById('log'); l.innerHTML = `<div>> ${m}</div>` + l.innerHTML; }
-    function renderInv() {
-        document.getElementById('inv-list').innerHTML = state.inventory.map(item => `
-            <div class="inv-item">
-                <span class="rank-${item.rank}">[${item.rank}] ${item.type}(+${item.enchant})</span>
-                <div><button onclick="state.equippedId=${item.id}; updateUI();">장착</button>
-                <button class="sell-btn" onclick="sellWeapon(${item.id})">판매</button></div>
-            </div>`).join('');
+   function executeGacha(type, count) {
+    let price = (type === 'high' ? 200 : 100) * (count === 11 ? 10 : count);
+    if(currentUser.crystals < price) return alert("다이아가 부족합니다!");
+
+    const results = [];
+    let bestRank = 'C';
+
+    for(let i=0; i<count; i++) {
+        let rank = type==='high' ? (Math.random()<0.1?'S':(Math.random()<0.4?'A':'B')) : (Math.random()<0.1?'A':(Math.random()<0.5?'B':'C'));
+        let keys = Object.keys(TEMPLATES[rank]);
+        let name = keys[Math.floor(Math.random()*keys.length)];
+        if (rank === 'S') bestRank = 'S';
+        results.push({ name, rank, data: TEMPLATES[rank][name] });
     }
+
+    playGachaMotion(bestRank, () => {
+        currentUser.crystals -= price;
+        const area = document.getElementById('gacha-area');
+        area.innerHTML = ""; 
+
+        results.forEach((res, index) => {
+            setTimeout(() => {
+                const { name, rank, data } = res;
+                let html = "";
+                
+                if(currentUser.inventory.some(h => h.name === name)) {
+                    currentUser.shards[name] = (currentUser.shards[name]||0) + 10;
+                    html = `<div style="animation: card-appear 0.3s forwards; color:#888;">[조각] ${name}</div>`;
+                } else {
+                    currentUser.inventory.push({...data, name, rank, lv:1, star:0, selected:false, pos:'front'});
+                    let color = rank === 'S' ? '#FFD700' : '#FFFFFF';
+                    html = `<div style="animation: card-appear 0.3s forwards; color:${color}; font-weight:bold;">✨ [NEW] ${name}</div>`;
+                }
+                area.innerHTML += html;
+                
+                // ★ 바로 이 부분입니다! ★
+                // 모든 영웅(index가 마지막일 때)이 다 화면에 그려지면 UI를 갱신합니다.
+                if (index === results.length - 1) {
+                    updateUI(); // 내 다이아 수치 등을 화면에 새로고침!
+                    if(typeof saveDB === 'function') saveDB(); 
+                }
+            }, index * 120); 
+        });
+    });
+}
+
+    function renderInventory() {
+        const list = document.getElementById('hero-list'); list.innerHTML = "";
+        currentUser.inventory.forEach((h, i) => {
+            list.innerHTML += `<div class="unit ${h.selected?'selected-unit':''}" onclick="showHeroDetail(${i})"><b>${h.name}</b> (Lv.${h.lv}) [${h.pos==='front'?'전열':'후열'}]</div>`;
+        });
+    }
+
+function showHeroDetail(i) {
+    const h = currentUser.inventory[i];
+    
+    // [수정] 기본 10레벨 + 성급당 10레벨 추가 (0성:10, 1성:20, 2성:30...)
+    const maxLv = 10 + (h.star * 10); 
+    
+    document.getElementById('hero-detail-panel').style.display = "block";
+    
+    const isMax = h.lv >= maxLv;
+    document.getElementById('detail-name').innerHTML = `
+        ${h.name} (${h.star}성) 
+        <span style="font-size:14px; color:${isMax ? '#f87171' : '#aaa'};">
+            Lv.${h.lv}/${maxLv}
+        </span>
+    `;
+    
+    document.getElementById('detail-desc').innerText = h.desc;
+
+    const sh = currentUser.shards[h.name] || 0; 
+    const need = (h.star + 1) * 20;
+    const lvCost = h.lv * 500; 
+
+    document.getElementById('detail-buttons').innerHTML = `
+        <button onclick="lvUp(${i})" ${isMax ? 'disabled style="background:#555; opacity:0.7;"' : 'style="background:#22c55e;"'}>
+            강화<br>
+            <small style="font-size:10px;">${isMax ? '한계 도달' : '비용: ' + lvCost.toLocaleString() + 'G'}</small>
+        </button>
+        <button onclick="evolve(${i})" ${h.star >= 3 ? 'disabled' : ''}>
+            진화(${sh}/${h.star >= 3 ? 'MAX' : need})<br>
+            <small style="font-size:10px;">조각 전용</small>
+        </button>
+        <button onclick="setPos(${i},'front')">전열</button>
+        <button onclick="setPos(${i},'back')">후열</button>
+        <button onclick="toggleSelect(${i})" style="grid-column:span 2; background:${h.selected ? '#ef4444' : '#22c55e'}">
+            ${h.selected ? '해제' : '편성'}
+        </button>`;
+}
+
+function lvUp(i) { 
+    const h = currentUser.inventory[i];
+    
+    // [수정] 위와 똑같은 공식 적용 (0성:10, 1성:20, 2성:30...)
+    const maxLv = 10 + (h.star * 10); 
+    
+    if (h.lv >= maxLv) {
+        return alert(`현재 레벨 제한은 ${maxLv}입니다.\n진화해서 한계를 돌파하세요!`);
+    }
+
+    const cost = h.lv * 500; 
+    if(currentUser.gold < cost) return alert("골드가 부족합니다!"); 
+    
+    currentUser.gold -= cost; 
+    h.lv++; 
+    
+    if(typeof log === 'function') log(`⬆️ [강화] ${h.name} 레벨업! (Lv.${h.lv}) (-${cost}G)`);
+    
+    if(typeof saveDB === 'function') saveDB();
+    else if(typeof saveData === 'function') saveData();
+    
+    updateUI(); 
+    if(typeof renderInventory === 'function') renderInventory(); 
+    if(typeof showHeroDetail === 'function') showHeroDetail(i);
+}function evolve(i) {
+    const h = currentUser.inventory[i];
+    const need = (h.star + 1) * 20; // 필요 진화석(조각)
+    const myShards = currentUser.shards[h.name] || 0;
+
+    // 성급 제한 및 진화석 체크 (골드 비용은 삭제했습니다)
+    if (h.star >= 3) return alert("이미 최대 성급입니다!");
+    if (myShards < need) return alert(`진화석이 부족합니다! (${myShards}/${need})`);
+
+    // 진화석만 차감
+    currentUser.shards[h.name] -= need;
+    h.star++;
+    
+    log(`🌟 [진화] ${h.name}이(가) ${h.star}성이 되었습니다! (진화석 ${need}개 소모)`);
+    updateUI();         
+    renderInventory();  
+    showHeroDetail(i);  
+}
+    function setPos(i, p) { currentUser.inventory[i].pos = p; renderInventory(); showHeroDetail(i); }
+    function toggleSelect(i) { const h = currentUser.inventory[i]; if(!h.selected && currentUser.inventory.filter(x=>x.selected).length >= 5) return alert("최대 5명"); h.selected = !h.selected; updateUI(); renderInventory(); showHeroDetail(i); }
+
+   function refreshShop() {
+    // 1. 전체 영웅 목록에서 판매 후보(Pool) 생성
+    const pool = [];
+    for (let r in TEMPLATES) {
+        for (let n in TEMPLATES[r]) {
+            pool.push({ name: n, rank: r });
+        }
+    }
+
+    shopItems = [];
+    // 2. 4개의 무작위 상품 생성
+    for (let i = 0; i < 4; i++) {
+        // 골드 상품 확률 40%
+        if (Math.random() < 0.4) { 
+            // 💰 [핵심] name에 "750,000"을 직접 써서 표지를 강제로 바꿉니다.
+            shopItems.push({ 
+                name: "💰 특가 750,000 골드", 
+                type: "gold", 
+                amount: 750000, 
+                price: 3000, 
+                stock: 1, 
+                rank: "S" 
+            });
+        } else {
+            // 나머지 확률은 랜덤 영웅 조각 10개
+            const h = pool[Math.floor(Math.random() * pool.length)];
+            const price = h.rank === 'S' ? 2000 : 750;
+            shopItems.push({ ...h, type: "shard", amount: 10, price: price, stock: 3 });
+        }
+    }
+    renderShop();
+}
+
+function renderShop() {
+    const area = document.getElementById('special-offers');
+    if (!area) return;
+    area.innerHTML = "";
+
+    shopItems.forEach((it, i) => {
+        const rankColor = it.rank === 'S' ? 'var(--gold)' : (it.rank === 'A' ? '#a855f7' : '#94a3b8');
+        
+        // 💰 화면에 보이는 수량 5배 (250,000G)
+        const amountText = it.type === 'gold' ? '💰 750,000G' : '✨ 조각 10개';
+        
+        area.innerHTML += `
+            <div class="unit" style="text-align:center; opacity:${it.stock <= 0 ? 0.5 : 1}; border: 1px solid ${rankColor}">
+                <b style="color:${rankColor}">${it.name}</b><br>
+                <small style="color:#aaa;">${amountText}</small><br>
+                <button onclick="buySpecial(${i})" ${it.stock <= 0 ? 'disabled' : ''} style="width:100%; margin-top:5px;">
+                    ${it.stock <= 0 ? '품절' : it.price + '💎'}
+                </button>
+            </div>`;
+    });
+}    function buySpecial(i) {
+    const it = shopItems[i];
+    
+    // 재고 확인 (품절 방어)
+    if (it.stock <= 0) return alert("이미 품절된 상품입니다.");
+    
+    // 다이아 체크
+    if (currentUser.crystals < it.price) return alert("다이아가 부족합니다!");
+
+    // 다이아 차감
+    currentUser.crystals -= it.price;
+    
+    if (it.type === 'gold' || it.name.includes('골드')) {
+        // 💰 [수정] 기존 250,000의 3배인 750,000을 직접 더해버립니다.
+        const bonusAmount = 750000; 
+        currentUser.gold += bonusAmount;
+        log(`💰 [암시장] 5배 대박! ${bonusAmount.toLocaleString()} 골드 구매 성공!`);
+    } else {
+        // 영웅 조각 구매
+        currentUser.shards[it.name] = (currentUser.shards[it.name] || 0) + it.amount;
+        log(`✨ [암시장] ${it.name} 조각 ${it.amount}개 구매 성공!`);
+    }
+
+    it.stock--; // 재고 감소
+    
+    // ★ 중요: 바뀐 데이터를 저장하고 화면을 새로 그려야 합니다.
+    if(typeof saveDB === 'function') saveDB(); 
+    else if(typeof saveData === 'function') saveData();
+    
+    updateUI();   // 상단바 골드/다이아 갱신
+    renderShop(); // 상점 품절 표시 및 수량 갱신
+}
+  function buyItem(type) {
+    let cost = 0;
+    let goldAmount = 0;
+
+  // 1. 아이템별 가격 및 골드 지급량 설정
+    if (type === 'gold_10k') {
+        cost = 300;
+        goldAmount = 50000; // 👈 10000을 50000으로 수정
+    } else if (type === 'gold_50k') {
+        cost = 1200;
+        goldAmount = 250000; // 👈 50000을 250000으로 수정
+    } else if (type === 'shard_s_universal') {
+        cost = 1000;
+    } else {
+        cost = 300; 
+    }
+
+    // 2. 다이아 잔액 체크
+    if (currentUser.crystals < cost) return alert("다이아가 부족합니다!");
+
+    // 3. 결제 진행
+    currentUser.crystals -= cost;
+
+    // 4. 보상 지급 (골드인가 조각인가?)
+    if (goldAmount > 0) {
+        // 골드 아이템인 경우
+        currentUser.gold += goldAmount;
+        log(`💰 [구매] ${goldAmount.toLocaleString()} 골드를 획득했습니다! (-${cost}💎)`);
+    } else {
+        // 조각 아이템인 경우
+        const key = type.includes('_s_') ? 'S_UNIVERSAL' : 'A_UNIVERSAL';
+        currentUser.shards[key] = (currentUser.shards[key] || 0) + 10;
+        log(`✨ [구매] 만능 조각 10개를 획득했습니다! (-${cost}💎)`);
+    }
+
+       
+    updateUI();
+}
+
+    setInterval(() => {
+        let rem = nextRefresh - Date.now(); if(rem <= 0) { nextRefresh = Date.now()+600000; refreshShop(); }
+        if(document.getElementById('shop-timer')) { let m=Math.floor(rem/60000), s=Math.floor((rem%60000)/1000); document.getElementById('shop-timer').innerText = `갱신까지: ${m}:${s<10?'0'+s:s}`; }
+    }, 1000);
+
+function startBattle() {
+    const sel = currentUser.inventory.filter(h => h.selected);
+    if(sel.length < 1) return alert("편성 필요");
+    
+    changeScreen('battle-screen');
+    bData.active = true;
+    bData.turnIdx = 0;
+    bData.teamMP = 0; 
+
+    const isBossStage = currentUser.stage % 5 === 0;
+
+    // 아군 팀 생성
+    bData.pTeam = sel.map(h => ({
+        ...h, 
+        curHP: h.hp + h.lv * 150, 
+        maxHP: h.hp + h.lv * 150,
+        curMP: 0
+    }));
+
+    // 적군 팀 생성
+    if (isBossStage) {
+        log(`<b style="color: #ff3300; font-size: 1.1em;">⚠️ 보스 등장: 대왕 들개가 나타났습니다!</b>`);
+        bData.eTeam = [{
+            ...TEMPLATES['C']['들개'], 
+            name: `🔥 대왕 들개 (BOSS)`, 
+            curHP: currentUser.stage * 6000,
+            maxHP: currentUser.stage * 6000, 
+            atk: currentUser.stage * 450, 
+            pos: 'front',
+            curMP: 0
+        }];
+    } else {
+        bData.eTeam = Array(5).fill(0).map((_, i) => ({
+            ...TEMPLATES['C']['들개'], 
+            name: `적${i+1}`, 
+            curHP: currentUser.stage * 1500, 
+            maxHP: currentUser.stage * 1500, 
+            atk: currentUser.stage * 250, 
+            pos: i < 3 ? 'front' : 'back',
+            curMP: 0
+        }));
+    }
+
+    // [고양이 패시브] 전투 시작 직전 적 공격력 감소 적용
+    const cat = bData.pTeam.find(h => h.name === '장화신은고양이');
+    if (cat) {
+        const star = cat.star || 1;
+        const reducePercent = 0.10 + (star - 1) * 0.05; 
+        bData.eTeam.forEach(e => {
+            e.atk *= (1 - reducePercent);
+        });
+        log(`🐱 [패시브] 고양이의 위협! 적 공격력이 ${Math.round(reducePercent * 100)}% 감소했습니다.`);
+        
+        // 후열 타격 보정: 전열이 죽어도 타겟을 새로 찾도록 설정 (시스템 호환용)
+        cat.forceTargetUpdate = true;
+    }
+
+    updateBattleUI();
+    nextTurn(); 
+} // <--- 깔끔하게 중괄호 하나로 닫았습니다.
+function updateBattleUI() {
+    const pF = document.getElementById('player-formation'), eF = document.getElementById('enemy-formation');
+    const ctrl = document.getElementById('battle-controls');
+    if (!pF || !eF || !ctrl) return;
+    
+    pF.innerHTML = ""; 
+    eF.innerHTML = "";
+
+    // 1. [아군 배치]
+    const pB = document.createElement('div'); pB.className = 'col'; 
+    const pFr = document.createElement('div'); pFr.className = 'col'; 
+    bData.pTeam.forEach((h, i) => {
+        const d = createUnitEl(h, bData.turnIdx === i);
+        h.pos === 'front' ? pFr.appendChild(d) : pB.appendChild(d);
+    });
+    pF.append(pB, pFr); 
+
+    // 2. [적군 배치 및 터치 로직]
+    const eFr = document.createElement('div'); eFr.className = 'col'; 
+    const eB = document.createElement('div'); eB.className = 'col'; 
+    
+    // 현재 공격 중인 아군 확인
+    const attacker = bData.pTeam[bData.turnIdx];
+
+    bData.eTeam.forEach((h, i) => {
+        const d = createUnitEl(h, bData.turnIdx === i + 5);
+        
+        if (bData.selectingTarget && h.curHP > 0) {
+            // [수정 핵심] 이하원 + 필살기일 때만 전/후열 무시 가능
+            const isHawonSkill = (attacker && attacker.name === '이하원' && bData.isSkill);
+            const frontAlive = bData.eTeam.some(e => e.pos === 'front' && e.curHP > 0);
+            
+            // 공격 가능 조건: 이하원 필살기거나, 타겟이 전열이거나, 전열이 전멸했거나
+            let can = isHawonSkill || h.pos === 'front' || !frontAlive;
+            
+            if (can) {
+                d.style.border = "3px solid red";
+                d.style.cursor = "pointer";
+                d.style.pointerEvents = "auto"; 
+                d.style.zIndex = "1000";
+
+                d.querySelectorAll('*').forEach(child => child.style.pointerEvents = 'none');
+
+                d.onclick = (e) => {
+                    e.stopPropagation();
+                    if (!bData.selectingTarget) return; 
+                    bData.selectingTarget = false; 
+                    
+                    d.style.pointerEvents = "none";
+                    d.style.border = "none";
+                    
+                    console.log("🎯 적 클릭 성공:", h.name);
+                    attack(h, bData.isSkill); 
+                };
+            } else {
+                // 공격 불가능한 후열 적들은 흐릿하게 표시
+                d.style.opacity = "0.3"; 
+                d.style.pointerEvents = "none";
+            }
+        }
+        h.pos === 'front' ? eFr.appendChild(d) : eB.appendChild(d);
+    });
+    eF.append(eFr, eB);
+
+    // 3. [타겟 선택 안내 및 취소 로직]
+    if (bData.selectingTarget) {
+        ctrl.innerHTML = `
+            <div style="text-align:center; margin-top:10px;">
+                <div style="color:red; font-weight:bold;">🎯 공격 대상을 클릭하세요!</div>
+                <button onclick="bData.selectingTarget=false; bData.isSkill=false; nextTurn();" 
+                        style="padding:5px 15px; cursor:pointer; background:#444; color:#fff; border-radius:5px; margin-top:5px;">
+                    공격 취소
+                </button>
+            </div>
+        `;
+    }
+}
+function attack(target) {
+    if (!bData.active) return;
+    
+    const attacker = bData.pTeam[bData.turnIdx];
+    if (!attacker || attacker.curHP <= 0) return;
+
+    // 1. 필살기 사용 시 게이지 소모
+    if (bData.isSkill) {
+        bData.teamMP -= 2;
+        log(`🔥 <b>${attacker.name}</b>의 필살기 발동!!`);
+    }
+
+    // 2. 데미지 계산
+    const starBonus = 1 + (attacker.star - 1) * 0.2; 
+    let damage = Math.floor(attacker.atk * starBonus);
+
+    // 3. 캐릭터별 특수 스킬(필살기) 로직
+    if (bData.isSkill) {
+        if (attacker.name === '이하원') {
+            // [추가 연출] 이하원 전용 스킬 효과 호출
+            if (typeof showHawnSkillEffect === 'function') {
+                showHawnSkillEffect();
+            }
+            
+            // [상향] 이하원 궁극기 5.0배!
+            applyDamage(target, Math.floor(damage * 5.0));
+        } else if (attacker.name === '탄지로') {
+            bData.eTeam.forEach(e => { if(e.curHP > 0) applyDamage(e, Math.floor(damage * 2.8)); });
+        } else if (attacker.name === '장화신은고양이') {
+            const frontAlive = bData.eTeam.some(e => e.pos === 'front' && e.curHP > 0);
+            bData.eTeam.forEach(e => {
+                if (frontAlive) {
+                    if (e.pos === 'front' && e.curHP > 0) applyDamage(e, Math.floor(damage * 3.2));
+                } else {
+                    if (e.curHP > 0) applyDamage(e, Math.floor(damage * 3.2));
+                }
+            });
+        } else if (attacker.name === '빅딜') {
+            // [조정] 빅딜 궁극기 단일 타격 2.5배 (사기 방지)
+            applyDamage(target, Math.floor(damage * 2.5));
+        } else if (attacker.name === '검객') {
+            bData.eTeam.forEach(e => { if(e.curHP > 0) applyDamage(e, Math.floor(damage * 1.8)); });
+        } else {
+            applyDamage(target, Math.floor(damage * 2.0));
+        }
+    } else {
+        // 일반 공격 타겟 자동 보정
+        let finalTarget = target;
+        if (!finalTarget || finalTarget.curHP <= 0) {
+            finalTarget = bData.eTeam.find(e => e.curHP > 0);
+        }
+        if (finalTarget) applyDamage(finalTarget, damage);
+    }
+
+    // ⭐ 4. 빅딜 성급별 부활 체크 (턴 종료 직전 실행)
+    bData.pTeam.forEach(hero => {
+        if (hero.name.includes('빅딜') && hero.curHP <= 0 && !hero.hasRevived) {
+            const star = hero.star || 0;
+            // 유저님 요청 수치: 0~1성(20%), 2성(40%), 3성(60%)
+            let revivePercent = 0.2;
+            if (star === 2) revivePercent = 0.4;
+            else if (star >= 3) revivePercent = 0.6;
+
+            hero.curHP = Math.floor(hero.maxHP * revivePercent);
+            hero.hasRevived = true;
+            log(`✨ <b style="color: #00ffcc;">[부활]</b> <b>빅딜(${star}성)</b>이 체력 ${Math.round(revivePercent * 100)}%로 일어났습니다!`);
+        }
+    });
+
+    // 5. 상태 초기화 및 턴 넘기기
+    bData.selectingTarget = false;
+    bData.isSkill = false;
+    bData.turnIdx++; 
+
+    if (!checkEnd()) {
+        setTimeout(nextTurn, 500); 
+    }
+}
+// 이하원 필살기 시각 연출 (설명서)
+function showHawnSkillEffect() {
+    // 1. 가운데 연하게 나타나는 컷인 효과
+    const cutin = document.getElementById('skill-cutin');
+    if (cutin) {
+        cutin.style.opacity = "0.4"; // 투명도를 0.4로 올려서 보이게 함
+        setTimeout(() => { cutin.style.opacity = "0"; }, 700); // 0.7초 뒤 다시 숨김
+    }
+
+    // 2. 적이 터지는 느낌을 주는 화면 흔들림 효과
+    const screen = document.getElementById('battle-screen') || document.body;
+    screen.classList.add('shake-animation'); // CSS에 적어둔 흔들림 애니메이션 실행
+    setTimeout(() => { screen.classList.remove('shake-animation'); }, 400);
+}
+function applyDamage(target, dmg) {
+    if (!target) return;
+
+    // 0. 이름 인식 보정 및 검객 패시브(무효화) 체크
+    const targetName = target.name ? target.name.trim() : "";
+    
+    if (targetName.includes('검객') && target.curHP > 0) {
+        const star = target.star || 1;
+        // 5% 기본 + 성급당 2.5% 추가 (1성 5%, 2성 7.5%, 3성 10%)
+        const avoidChance = 0.05 + (star - 1) * 0.025;
+
+        if (Math.random() < avoidChance) {
+            // [시각 효과 추가] 로그에 배경색을 넣고 화면을 번쩍이게 함
+            log(`✨ <b style="color: white; background: #2563eb; padding: 2px 5px; border-radius: 3px;">[무효화]</b> <b>검객</b>이 공격을 회피했습니다!`);
+            
+            const bs = document.getElementById('battle-screen');
+            if (bs) {
+                bs.style.filter = 'brightness(1.5)'; // 화면 순간 번쩍
+                setTimeout(() => bs.style.filter = 'brightness(1)', 150);
+            }
+
+            if (typeof updateBattleUI === 'function') updateBattleUI();
+            return; // 데미지 차감 단계로 가지 않고 종료
+        }
+    }
+
+    // 1. 데미지 차감
+    target.curHP -= dmg;
+
+    // 2. [부활 로직] 빅딜 혹은 검객이 체력이 0 이하가 될 때 가로채기
+    const isReviver = targetName.includes('빅딜') || targetName.includes('검객');
+    if (isReviver && target.curHP <= 0 && !target.hasRevived) {
+        const star = target.star || 1;
+        // 성급별 부활 체력 비율 설정
+        let revivePercent = 0.2;
+        if (star === 2) revivePercent = 0.4;
+        else if (star >= 3) revivePercent = 0.6;
+
+        const recoverAmount = target.maxHP ? target.maxHP * revivePercent : (target.hp * revivePercent || 500);
+        target.curHP = Math.floor(recoverAmount); 
+        target.hasRevived = true; 
+        
+        log(`✨ <b style="color: #00ffcc; font-size: 1.1em;">[부활]</b> <b>${target.name}</b>이(가) 불굴의 의지로 부활했습니다!`);
+        
+        const bs = document.getElementById('battle-screen');
+        if (bs) {
+            bs.style.animation = 'shake 0.5s';
+            setTimeout(() => bs.style.animation = '', 500);
+        }
+        
+        if (typeof updateBattleUI === 'function') updateBattleUI();
+        return; 
+    }
+
+    // 3. 사망 처리
+    if (target.curHP <= 0) {
+        target.curHP = 0;
+        log(`💀 <b>${target.name}</b>이(가) 쓰러졌습니다.`);
+    } else {
+        log(`${target.name}에게 ${Math.round(dmg)}의 피해! (남은 HP: ${target.curHP})`);
+    }
+    
+    if (typeof updateBattleUI === 'function') updateBattleUI();
+}
+function createUnitEl(h, act) { 
+    const d = document.createElement('div'); 
+    d.className=`unit ${act?'selected-unit':''}`; 
+    // 후열 적이 전열에 가려져 클릭 안되는 것 방지
+    d.style.position = "relative";
+    d.style.zIndex = h.pos === 'back' ? "100" : "10";
+    
+    d.innerHTML=`<b>${h.name}</b><div class="hp-bar"><div class="hp-fill" style="width:${(h.curHP/h.maxHP)*100}%"></div></div>`; 
+    if(h.curHP<=0) d.style.opacity="0.3"; 
+    return d; 
+}
+
+function nextTurn() {
+    if(!bData.active) return;
+
+    // [0] 라운드 종료 및 리셋 체크
+    if (bData.turnIdx >= 10) {
+        bData.turnIdx = 0;
+        bData.roundCharged = false;
+    }
+
+    // [1] 새 라운드 시작 시 게이지 충전
+    if(bData.turnIdx === 0 && !bData.roundCharged) {
+        bData.teamMP = (Number(bData.teamMP) || 0) + 2;
+        bData.roundCharged = true;
+        log(`<b>--- [새 라운드] 팀 게이지 +2 충전 ---</b>`);
+    }
+    if(bData.turnIdx !== 0) bData.roundCharged = false;
+
+    // [2] 아군 턴 처리 (0 ~ 4)
+    if(bData.turnIdx < 5) {
+        const h = bData.pTeam[bData.turnIdx]; 
+        
+        // ⭐ [빅딜 성급별 부활 로직] 0~1성: 20%, 2성: 40%, 3성: 60%
+        if (h && h.name.includes('빅딜') && h.curHP <= 0 && !h.hasRevived) {
+            const star = h.star || 0; 
+            let revivePercent = 0.2; 
+            if (star === 2) revivePercent = 0.4;
+            else if (star >= 3) revivePercent = 0.6;
+
+            h.curHP = Math.floor(h.maxHP * revivePercent);
+            h.hasRevived = true;
+            
+            log(`✨ <b style="color: #00ffcc;">[부활]</b> <b>빅딜(${star}성)</b>이 체력 ${Math.round(revivePercent * 100)}%로 부활했습니다!`);
+            updateBattleUI();
+        }
+
+        if(!h || h.curHP <= 0) { 
+            bData.turnIdx++; 
+            return nextTurn(); 
+        } 
+
+        // [패시브] 탄지로의 재생
+        if (h.name === '탄지로' && h.curHP > 0) {
+            const star = h.star || 1;
+            const healPercent = 0.10 + (star - 1) * 0.05;
+            const healAmount = Math.floor(h.maxHP * healPercent);
+            h.curHP = Math.min(h.maxHP, h.curHP + healAmount);
+            log(`🌊 [패시브] 탄지로의 재생! HP ${healAmount} 회복.`);
+        }
+
+        const canUseSkill = (Number(bData.teamMP) || 0) >= 2;
+        
+        // ⭐ [스킬 정보 밸런스 조정]
+        const skillInfo = {
+            "이하원": "🎯 명존쎄: 단일 대상에게 죽창을 꽂습니다 (5.0배)",
+            "탄지로": "🌊 물의 호흡: 적 전체 광역 피해 (2.8배)",
+            "장화신은고양이": "🐾 마구할퀴기: 앞줄(없으면 뒷줄) 전체 공격 (3.2배)",
+            "검객": "⚔️ 발도술: 일섬: 적 전체 공격 (1.8배)",
+            "빅딜": "👊 진심 펀치: 단일 대상에게 강력한 한 방 (2.5배)"
+        };
+
+        let html = `
+            <div style="color: #00ffff; font-weight: bold; text-align:center;">${h.name}의 차례 (게이지: ${bData.teamMP})</div>
+            <div style="color: #ffcc00; font-size: 0.85em; margin: 4px 0; text-align:center;">${skillInfo[h.name] || "강력한 일격"}</div>
+            <div style="display: flex; gap: 5px; justify-content: center;">
+                <button onclick="bData.isSkill=false; bData.selectingTarget=true; updateBattleUI();" style="padding: 10px 15px; cursor:pointer; font-weight:bold;">⚔️ 일반</button>
+        `;
+
+        if(canUseSkill) {
+            html += `<button onclick="bData.isSkill=true; bData.selectingTarget=true; updateBattleUI();" style="background:#ff4444; color:white; padding: 10px 15px; cursor:pointer; font-weight:bold; border:none; border-radius:3px;">🔥 필살기</button>`;
+        }
+        
+        html += `</div>`;
+        document.getElementById('battle-controls').innerHTML = html; 
+        updateBattleUI();
+
+    } else { 
+        // [3] 적군 턴 처리
+        const e = bData.eTeam[bData.turnIdx - 5]; 
+        if(!e || e.curHP <= 0) { 
+            bData.turnIdx++; 
+            return nextTurn(); 
+        } 
+        document.getElementById('battle-controls').innerHTML = `<div style="text-align:center; color:#aaa; margin-top:10px;">적군(${e.name}) 공격 중...</div>`;
+        setTimeout(() => {
+            if(typeof enemyTurn === 'function') enemyTurn(e);
+            else { bData.turnIdx++; nextTurn(); }
+        }, 800); 
+    }
+}function selectTarget(index) {
+    if(!bData.selectingTarget) return;
+    
+    const attacker = bData.pTeam[bData.turnIdx];
+    const target = bData.eTeam[index];
+    
+    if(!target || target.curHP <= 0) return;
+
+    // 1. 여기서 필살기를 쓰고 게이지를 깎습니다.
+    executeTurn(attacker, 'player', target);
+    
+    bData.selectingTarget = false;
+    bData.turnIdx++; 
+    
+    // 2. 화면을 갱신해서 깎인 게이지를 먼저 보여줍니다.
+    updateBattleUI();
+    
+    // 3. 아주 잠깐(0.01초) 쉬었다가 다음 턴을 불러서 게이지 체크를 확실히 하게 합니다.
+    if(!checkEnd()) {
+        setTimeout(() => {
+            nextTurn();
+        }, 10);
+    }
+}
+// 1. 데미지 계산 및 게이지 차감 담당
+function executeTurn(attacker, team, target, isSkill) {
+    if (attacker.curHP <= 0) return;
+
+    // --- [패시브: 검객의 무효화] ---
+    // 데미지 계산 자체를 시작하기 전에 여기서 먼저 튕겨냅니다.
+    if (target && target.name === '검객' && target.curHP > 0) {
+        const star = target.star || 1;
+        const dodgeChance = 0.05 + (star - 1) * 0.025;
+        if (Math.random() < dodgeChance) {
+            return log(`⚔️ [패시브] 검객이 공격을 무효화했습니다!`); // 여기서 함수 종료(아래 코드 실행X)
+        }
+    }
+
+    const enemies = (team === 'player') ? bData.eTeam : bData.pTeam;
+    let finalDamage = 0; 
+
+    // [필살기/일반 공격 로직 시작]
+    if (team === 'player' && isSkill && (Number(bData.teamMP) >= 2)) {
+        bData.teamMP -= 2; 
+        const skillData = {
+            "이하원": { skill: "👊 명존쎄", mult: 4.5, msg: "님이 진영 무시! 명치를 뚫어버립니다!", type: "snipe" },
+            "탄지로": { skill: "🌊 물의 호흡", mult: 2.8, msg: "님이 적 전체를 베어 넘깁니다!", type: "all" },
+            "장화신은고양이": { skill: "🐾 마구할퀴기", mult: 3.2, msg: "님이 앞줄을 난도질합니다!", type: "row" },
+            "검객": { skill: "⚔️ 발도술: 일섬", mult: 1.8, msg: "님이 적 전체를 베어 넘깁니다!", type: "all" }
+        };
+
+        const power = skillData[attacker.name] || { skill: "필살 공격", mult: 2.0, msg: "님이 강력하게 공격!", type: "single" };
+        finalDamage = Math.floor(attacker.atk * power.mult);
+        log(`<b style="color: #ffcc00;">[🔥TEAM SKILL] ${attacker.name}: ${power.skill}</b>`);
+
+        if (power.type === "all") {
+            enemies.forEach(e => { if (e.curHP > 0) e.curHP -= finalDamage; });
+        } else if (power.type === "snipe") {
+            const alive = enemies.filter(e => e.curHP > 0);
+            if(alive.length > 0) {
+                const rnd = alive[Math.floor(Math.random() * alive.length)];
+                rnd.curHP -= finalDamage;
+                target = rnd; 
+                log(`🎯 [저격] ${attacker.name}${power.msg}`);
+            }
+        } else {
+            target.curHP -= finalDamage;
+            log(`${attacker.name}${power.msg} (💥 ${finalDamage} 피해!)`);
+        }
+    } else {
+        // 일반 공격
+        finalDamage = attacker.atk;
+        target.curHP -= finalDamage;
+        log(`⚔️ ${attacker.name}의 공격: ${target.name}에게 ${finalDamage} 피해.`);
+    }
+
+    // --- [패시브: 이하원 반격 & 빅딜 불사] ---
+    // 공격이 완전히 끝난 후(피가 깎인 후) 체크합니다.
+    if (target && target.name === '이하원' && target.curHP > 0) {
+        if (Math.random() < (0.30 + ((target.star || 1) - 1) * 0.10)) {
+            const reflectDmg = Math.floor(finalDamage * 0.5);
+            attacker.curHP -= reflectDmg;
+            log(`🎯 [패시브] 이하원 반격! ${attacker.name}에게 ${reflectDmg} 반사!`);
+        }
+    }
+
+    if (target && target.name === '빅딜' && target.curHP <= 0 && !target.hasRevived) {
+        const revivePercent = 0.20 + ((target.star || 1) - 1) * 0.20;
+        target.curHP = Math.floor(target.maxHP * revivePercent);
+        target.hasRevived = true;
+        log(`🔥 [패시브] 빅딜의 불사! 체력 ${Math.round(revivePercent * 100)}%로 부활!`);
+    }
+}function enemyTurn(e) {
+    // 전열 우선 공격 로직
+    let ts = bData.pTeam.filter(p => p.curHP > 0 && p.pos === 'front');
+    if (ts.length === 0) ts = bData.pTeam.filter(p => p.curHP > 0);
+    
+    if (ts.length > 0) {
+        const target = ts[0];
+        // 적군 공격 시에도 애니메이션을 주고 싶다면 여기에 attack-e 클래스를 활용할 수 있습니다.
+        target.curHP -= e.atk;
+        log(`💀 [적의 공격] ${e.name} -> ${target.name}에게 ${Math.floor(e.atk)} 피해!`);
+    }
+    
+    bData.turnIdx = bData.turnIdx >= 9 ? 0 : bData.turnIdx + 1;
+    checkEnd();
+    updateBattleUI();
+    nextTurn();
+}
+    // [2단계] 전투 종료 및 승리 판정 함수 (수정본)
+function checkEnd() { 
+    // [패배 조건]
+    if(bData.pTeam.every(p => p.curHP <= 0)) { 
+        alert("패배... 캐릭터를 더 강화해보세요!"); 
+        bData.active = false; 
+        changeScreen('lobby-screen'); 
+    } 
+    // [승리 조건]
+    else if(bData.eTeam.every(e => e.curHP <= 0)) { 
+        
+        let rewardMsg = "";
+        const isBoss = bData.eTeam.some(e => e.isBoss); 
+
+        if (isBoss) {
+            const ticketReward = 3;
+            const goldReward = currentUser.stage * 1000;
+            currentUser.gachaTicket = (currentUser.gachaTicket || 0) + ticketReward;
+            currentUser.gold += goldReward;
+            rewardMsg = `🎊 보스 처치 완료!\n보상: 🎟️ 무료 뽑기권 ${ticketReward}장, 💰 ${goldReward} 골드`;
+        } else {
+            const crystalReward = 50; 
+            const goldReward = currentUser.stage * 2500; 
+            currentUser.crystals += crystalReward; 
+            currentUser.gold += goldReward;
+            rewardMsg = "승리! 스테이지를 클리어했습니다.";
+        }
+
+        alert(rewardMsg);
+        
+        // 🏆 [랭킹 반영] 스테이지 클리어 직후 랭킹 업데이트
+        // 현재 스테이지 정보를 저장합니다.
+        updateRanking(currentUser.stage);
+
+        currentUser.stage++; // 다음 스테이지로!
+        bData.active = false; 
+        
+        updateUI(); 
+        saveDB(); 
+        changeScreen('lobby-screen'); 
+        
+        // 로비로 돌아갔을 때 랭킹판을 최신화합니다.
+        renderRanking();
+    } 
+}
+
+// [1단계] 랭킹 데이터 관리 (닉네임 우선 반영 + 최고 기록 업데이트)
+// [1단계] 랭킹 데이터 관리 (닉네임 강제 부여 로직 포함)
+function updateRanking(stageScore) {
+    try {
+        let ranks = JSON.parse(localStorage.getItem('myGameRanks')) || [];
+
+        // 1. 이름 찾기 수사대
+        let userNickname = "";
+        
+        // currentUser 객체에서 모든 가능성을 뒤집니다.
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            userNickname = currentUser.name || currentUser.nickname || currentUser.id;
+        }
+
+        // 2. [강력 조치] 이름이 없거나 '익명'이면 팝업창을 띄워 이름을 직접 받습니다.
+        if (!userNickname || userNickname === "익명 용사" || userNickname === "undefined") {
+            userNickname = prompt("랭킹에 등록할 이름을 입력해주세요!", "무명용사");
+            
+            // 취소를 누르거나 빈칸이면 무작위 이름 부여
+            if (!userNickname) {
+                userNickname = "용사" + Math.floor(Math.random() * 999);
+            }
+            
+            // 나중에 또 묻지 않게 데이터에 저장
+            if (typeof currentUser !== 'undefined') currentUser.name = userNickname;
+        }
+
+        // 3. 중복 체크: 이미 랭킹에 같은 닉네임이 있는지 확인
+        const existingIndex = ranks.findIndex(r => r.id === userNickname);
+
+        if (existingIndex !== -1) {
+            // 이미 존재한다면: 현재 스테이지가 기존 기록보다 높을 때만 갱신
+            if (stageScore > ranks[existingIndex].score) {
+                ranks[existingIndex].score = stageScore;
+                ranks[existingIndex].date = new Date().toLocaleDateString();
+            }
+        } else {
+            // 존재하지 않는다면: 새로 추가
+            ranks.push({ 
+                id: userNickname, 
+                score: stageScore, 
+                date: new Date().toLocaleDateString() 
+            });
+        }
+
+        // 4. 정렬 및 상위 5개 저장
+        ranks.sort((a, b) => b.score - a.score);
+        ranks = ranks.slice(0, 5);
+
+        localStorage.setItem('myGameRanks', JSON.stringify(ranks));
+    } catch (e) {
+        console.error("랭킹 업데이트 중 오류:", e);
+    }
+}// [2단계] 랭킹 화면 출력
+function renderRanking() {
+    const rankingList = document.getElementById('ranking-list');
+    if (!rankingList) return;
+
+    let ranks = [];
+    try {
+        ranks = JSON.parse(localStorage.getItem('myGameRanks')) || [];
+    } catch (e) {
+        ranks = [];
+    }
+
+    let rankHTML = `
+        <div style="color: #ffcc00; font-weight: bold; font-size: 1.1em; margin-bottom: 8px; text-align: center; text-shadow: 1px 1px 2px #000;">🏆 명예의 전당 (Top 5)</div>
+        <div style="padding: 12px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid #555;">
+    `;
+
+    if (ranks.length === 0) {
+        rankHTML += `<div style="color: #888; font-size: 0.85em; text-align: center; padding: 10px;">아직 클리어 기록이 없습니다.</div>`;
+    } else {
+        ranks.forEach((r, i) => {
+            const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "🎖️";
+            // 데이터 오염 방지 (undefined 방지)
+            const displayName = (r.id && r.id !== "undefined" && r.id !== "익명 용사") ? r.id : "이름없는 용사";
+            
+            rankHTML += `
+                <div style="margin-bottom: 6px; font-size: 0.95em; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 4px;">
+                    <span style="color: #fff;">${medal} ${i+1}위: <b>${displayName}</b></span>
+                    <span style="color: #00ffcc; font-weight: bold;">Stage ${r.score}</span>
+                </div>
+            `;
+        });
+    }
+
+    rankHTML += `
+        </div>
+        <div style="font-size: 0.75em; color: #aaa; margin-top: 10px; text-align: center;">
+            ※ 최고 도달 스테이지가 실시간으로 반영됩니다.
+        </div>
+    `;
+
+    rankingList.innerHTML = rankHTML;
+}// 로그 출력 함수 (그대로 유지)
+function log(msg) {
+    const logDiv = document.getElementById('log');
+    if (logDiv) {
+        const entry = document.createElement('div');
+        entry.style.borderBottom = "1px solid #222";
+        entry.style.padding = "2px 0";
+        entry.innerHTML = msg;
+        logDiv.appendChild(entry);
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    console.log("GAME_LOG:", msg);
+}
+function useCoupon() {
+    const input = document.getElementById('coupon-input');
+    const code = input.value.trim().toUpperCase(); 
+
+    // ★ [중요] 사용자가 쿠폰을 처음 쓸 때 바구니가 없으면 만들어줍니다.
+    if (!currentUser.usedCoupons) {
+        currentUser.usedCoupons = [];
+    }
+
+    if (!code) return alert("쿠폰 번호를 입력해주세요.");
+    
+    // 이미 사용한 쿠폰인지 체크
+    if (currentUser.usedCoupons.includes(code)) {
+        return alert("이미 사용한 쿠폰입니다.");
+    }
+
+    let rewardMsg = "";
+    
+    if (code === "WELCOME2026") {
+        currentUser.crystals += 1000;
+        currentUser.gold += 3000;
+        rewardMsg = "🎁 환영 선물: 1,000💎 + 3000G";
+    } 
+    else if (code === "27272727") {
+        currentUser.crystals += 1000000;
+        rewardMsg = "✨ 특별";
+    }
+    else if (code === "LEEHAWON") {
+        currentUser.shards["이하원"] = (currentUser.shards["이하원"] || 0) + 50;
+        rewardMsg = "⚔️ 이하원 진화석 50개 획득!";
+    }
+    else {
+        return alert("유효하지 않은 쿠폰 번호입니다.");
+    }
+
+    // 성공 처리
+    currentUser.usedCoupons.push(code); 
+    alert(`쿠폰 사용 성공!\n${rewardMsg}`);
+    input.value = ""; 
+    
+    log(`🎫 [쿠폰] ${code} 사용 완료!`);
+    updateUI(); 
+}
+/* --- 쿠폰 함수 중괄호( } ) 바로 다음 줄에 붙여넣으세요 --- */
+
+// [2번] 운석 낙하 연출 엔진
+function playGachaMotion(bestRank, count, callback) {
+    const screen = document.body;
+    const area = document.getElementById('gacha-area');
+    
+    // 안전장치: 뽑기 개수가 없으면 1개로 처리
+    const meteorCount = count || 1; 
+
+    area.innerHTML = "<div style='color:white; font-size:18px; text-align:center; padding-top:40px;'>운명을 결정하는 중...</div>";
+    screen.style.pointerEvents = "none"; // 연출 중 클릭 방지
+    
+    // 배경이 어두워지는 애니메이션 시작
+    screen.style.animation = "darken-sky 1.5s forwards";
+
+    // 1. 운석 떨어뜨리기 루프
+    for (let i = 0; i < meteorCount; i++) {
+        setTimeout(() => {
+            const meteor = document.createElement('div');
+            meteor.className = 'meteor'; // CSS에서 설정한 운석 스타일
+            meteor.style.left = (Math.random() * 80 + 10) + "%"; 
+            meteor.style.top = "40%"; 
+            meteor.style.animation = "meteor-fall 0.6s ease-in forwards";
+            document.body.appendChild(meteor);
+
+            // 떨어진 운석은 0.6초 뒤 삭제
+            setTimeout(() => meteor.remove(), 600);
+        }, i * 150); // 0.15초 간격으로 연속 낙하
+    }
+
+    // 2. 모든 운석이 다 떨어진 시점에 결과 공개 (대기 시간 계산)
+    const totalWaitTime = (meteorCount * 150) + 1000;
+
+    setTimeout(() => {
+        screen.style.animation = ""; // 애니메이션 초기화
+        
+        // S급 당첨 시 화려한 번쩍임 효과
+        if (bestRank === 'S') {
+            screen.style.backgroundColor = "white"; 
+            setTimeout(() => { screen.style.backgroundColor = "#222"; }, 100);
+            area.style.animation = "s-rank-shake 0.5s 2";
+        }
+
+        screen.style.pointerEvents = "auto"; // 클릭 방지 해제
+        
+        // ★ 중요: 여기서 다음 단계(결과 출력)로 넘어갑니다.
+        if (callback) callback(); 
+    }, totalWaitTime);
+}
+// [3번] 기존 뽑기 함수를 대체하는 새 함수
+function executeGacha(type, count) {
+    let price = (type === 'high' ? 200 : 100) * (count === 11 ? 10 : count);
+    if(currentUser.crystals < price) return alert("다이아가 부족합니다!");
+
+    const results = [];
+    let bestRank = 'C';
+
+    // 결과 미리 계산
+    for(let i=0; i<count; i++) {
+        let rank = type==='high' ? (Math.random()<0.1?'S':(Math.random()<0.4?'A':'B')) : (Math.random()<0.1?'A':(Math.random()<0.5?'B':'C'));
+        let keys = Object.keys(TEMPLATES[rank]);
+        let name = keys[Math.floor(Math.random()*keys.length)];
+        if (rank === 'S') bestRank = 'S';
+        else if (rank === 'A' && bestRank !== 'S') bestRank = 'A';
+        results.push({ name, rank, data: TEMPLATES[rank][name] });
+    }
+
+   // 연출 실행 (playGachaMotion에 count를 전달해야 합니다)
+    playGachaMotion(bestRank, count, () => {
+        currentUser.crystals -= price;
+        const area = document.getElementById('gacha-area');
+        area.innerHTML = "";
+
+        results.forEach((res, index) => {
+            setTimeout(() => {
+                const { name, rank, data } = res;
+                let html = "";
+
+                if(currentUser.inventory.some(h => h.name === name)) {
+                    currentUser.shards[name] = (currentUser.shards[name]||0) + 10;
+                    html = `<div style="animation: card-appear 0.3s forwards; color:#888; margin:3px 0;">[조각] ${name} (+10)</div>`;
+                } else {
+                    currentUser.inventory.push({...data, name, rank, lv:1, star:0, selected:false, pos:'front'});
+                    let color = rank === 'S' ? '#FFD700' : (rank === 'A' ? '#DA70D6' : '#FFFFFF');
+                    html = `<div style="animation: card-appear 0.3s forwards; color:${color}; font-weight:bold; margin:5px 0; font-size:16px;">✨ [NEW] ${name} (${rank})</div>`;
+                }
+                area.innerHTML += html;
+
+                if (index === results.length - 1) {
+                    updateUI();
+                    saveDB();
+                }
+            }, index * 120);
+        });
+    });
+} // <--- 사진에서 빠져있던 이 중괄호가 핵심입니다!
+function executeTurn(attacker, team, target, isSkill) {
+    if (!attacker || !target || attacker.curHP <= 0) return;
+
+    // --- [패시브 1: 검객 - 무효화(회피)] ---
+    // 데미지를 입기 전에 먼저 검사해서 튕겨냅니다.
+    if (target.name === '검객' && target.curHP > 0) {
+        const star = target.star || 1;
+        const dodgeChance = 0.05 + (star - 1) * 0.025; // 5% + 성급당 2.5%
+        if (Math.random() < dodgeChance) {
+            return log(`⚔️ [패시브] 검객이 화려한 검술로 공격을 무효화했습니다!`);
+        }
+    }
+
+    const enemies = (team === 'player') ? bData.eTeam : bData.pTeam;
+    let damage = attacker.atk;
+
+    // 필살기 모드 로직
+    if (team === 'player' && isSkill && (Number(bData.teamMP) >= 2)) {
+        bData.teamMP -= 2;
+        const skillData = {
+            "이하원": { skill: "👊 명존쎄", mult: 4.5, msg: "님이 명치를 뚫어버립니다!", type: "snipe" },
+            "탄지로": { skill: "🌊 물의 호흡", mult: 2.8, msg: "님이 적 전체를 벱니다!", type: "all" },
+            "장화신은고양이": { skill: "🐾 마구할퀴기", mult: 3.2, msg: "님이 앞줄을 난도질합니다!", type: "row" },
+            "검객": { skill: "⚔️ 발도술: 일섬", mult: 1.8, msg: "님이 적 전체를 벱니다!", type: "all" }
+        };
+
+        const power = skillData[attacker.name] || { skill: "필살 공격", mult: 2.0, msg: "님이 강력 공격!", type: "single" };
+        damage = Math.floor(attacker.atk * power.mult);
+        log(`<b style="color: #ffcc00;">[🔥TEAM SKILL] ${attacker.name}: ${power.skill}</b>`);
+
+        if (power.type === "all") {
+            enemies.forEach(e => { if (e.curHP > 0) e.curHP -= damage; });
+        } else if (power.type === "snipe") {
+            const alive = enemies.filter(e => e.curHP > 0);
+            if(alive.length > 0) {
+                const rnd = alive[Math.floor(Math.random() * alive.length)];
+                rnd.curHP -= damage;
+                log(`🎯 [저격] ${attacker.name}${power.msg}`);
+            }
+        } else {
+            target.curHP -= damage;
+            log(`${attacker.name}${power.msg} (💥 ${damage} 피해!)`);
+        }
+    } else {
+        // 일반 공격
+        target.curHP -= damage;
+        log(`⚔️ ${attacker.name}의 공격: ${target.name}에게 ${damage} 피해.`);
+    }
+
+    // --- [패시브 2: 이하원 - 반격] ---
+    // 데미지를 입힌 직후, 맞은 대상이 이하원이라면 반격합니다.
+    if (target.name === '이하원' && target.curHP > 0) {
+        const star = target.star || 1;
+        const reflectChance = 0.30 + (star - 1) * 0.10; // 30% + 성급당 10%
+        if (Math.random() < reflectChance) {
+            const reflectDmg = Math.floor(damage * 0.5); // 받은 피해의 50% 반사
+            attacker.curHP -= reflectDmg;
+            log(`🎯 [패시브] 이하원 반격! ${attacker.name}에게 ${reflectDmg} 반사!`);
+        }
+    }
+
+    // --- [패시브 3: 빅딜 - 불사(부활)] ---
+    // 피가 0 이하가 되었을 때 딱 한 번 살아납니다.
+    if (target.name === '빅딜' && target.curHP <= 0 && !target.hasRevived) {
+        const star = target.star || 1;
+        const revivePercent = 0.20 + (star - 1) * 0.20; // 20% + 성급당 20%
+        target.curHP = Math.floor(target.maxHP * revivePercent);
+        target.hasRevived = true; 
+        log(`🔥 [패시브] 빅딜의 불사 발동! 체력 ${Math.round(revivePercent * 100)}%로 부활!`);
+    }
+}
+// [파일 맨 아래 추가] 랭킹 저장 및 정렬 함수
+// [1단계] 랭킹 데이터 관리 (닉네임 반영 + 1인 1기록 유지)
+function updateRanking(newScore) {
+    try {
+        // 1. 기존 랭킹 가져오기
+        let ranks = JSON.parse(localStorage.getItem('myGameRanks')) || [];
+
+        // 2. [중요] 닉네임 가져오기 (이름이 없으면 절대 안되니까 강제로 찾음)
+        let userName = "익명 용사";
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            // currentUser.name이나 nickname 중 있는 것을 가져옵니다.
+            userName = currentUser.name || currentUser.nickname || currentUser.id || "익명 용사";
+        }
+
+        // 3. 중복 체크: 이미 랭킹에 이 닉네임이 있는지 확인
+        const existingIndex = ranks.findIndex(r => r.id === userName);
+
+        if (existingIndex !== -1) {
+            // 이미 존재한다면: 내 예전 기록보다 지금 점수가 높을 때만 '갱신'
+            if (newScore > ranks[existingIndex].score) {
+                ranks[existingIndex].score = newScore;
+                ranks[existingIndex].date = new Date().toLocaleDateString();
+            }
+        } else {
+            // 랭킹에 처음 진입하는 이름이라면 새로 추가
+            ranks.push({ 
+                id: userName, 
+                score: newScore, 
+                date: new Date().toLocaleDateString() 
+            });
+        }
+
+        // 4. 점수 높은 순 정렬 및 상위 5개 자르기
+        ranks.sort((a, b) => b.score - a.score);
+        ranks = ranks.slice(0, 5);
+
+        // 5. 저장
+        localStorage.setItem('myGameRanks', JSON.stringify(ranks));
+
+        // 6. 화면 최신화 (함수 이름이 displayRanking이면 그대로 유지)
+        if (typeof displayRanking === 'function') displayRanking();
+        else if (typeof renderRanking === 'function') renderRanking();
+
+    } catch (e) {
+        console.error("랭킹 업데이트 중 오류 발생:", e);
+    }
+}
+// 랭킹을 화면에 그려주는 함수
+function displayRanking() {
+    const rankList = document.getElementById('rank-list');
+    if (!rankList) return;
+
+    let ranks = JSON.parse(localStorage.getItem('myGameRanks')) || [];
+    
+    if (ranks.length === 0) {
+        rankList.innerHTML = "<li>아직 기록이 없습니다.</li>";
+        return;
+    }
+
+    rankList.innerHTML = ranks.map((r, i) => `
+        <li>${i + 1}위: ${r.score.toLocaleString()}점 (${r.date})</li>
+    `).join('');
+}
+// 캐릭터 머리 위에 글자를 띄워주는 함수
+function showFloatingText(text, color) {
+    const effect = document.createElement('div');
+    effect.innerHTML = text;
+    effect.style.cssText = `
+        position: fixed;
+        left: 50%;
+        top: 45%;
+        transform: translate(-50%, -50%);
+        color: ${color};
+        font-size: 50px;
+        font-weight: bold;
+        text-shadow: 2px 2px 10px black;
+        z-index: 10000;
+        pointer-events: none;
+        animation: fadeUpMiss 0.8s forwards;
+    `;
+    document.body.appendChild(effect);
+    setTimeout(() => effect.remove(), 800);
+}
 </script>
 </body>
 </html>
