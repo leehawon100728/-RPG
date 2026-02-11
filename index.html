@@ -748,19 +748,16 @@ function attack(target) {
         log(`🔥 <b>${attacker.name}</b>의 필살기 발동!!`);
     }
 
-    // 2. 데미지 계산
-    const starBonus = 1 + (attacker.star - 1) * 0.2; 
-    let damage = Math.floor(attacker.atk * starBonus);
+    // 2. [효율 대폭 강화] 데미지 계산식
+    // 성급당 30% 증가 + 레벨당 20%씩 복리급 상승 (기존 15%에서 더 올림)
+    const starBonus = 1 + (attacker.star - 1) * 0.3; 
+    const lvBonus = 1 + (attacker.lv - 1) * 0.20;   
+    let damage = Math.floor(attacker.atk * starBonus * lvBonus);
 
     // 3. 캐릭터별 특수 스킬(필살기) 로직
     if (bData.isSkill) {
         if (attacker.name === '이하원') {
-            // [추가 연출] 이하원 전용 스킬 효과 호출
-            if (typeof showHawnSkillEffect === 'function') {
-                showHawnSkillEffect();
-            }
-            
-            // [상향] 이하원 궁극기 5.0배!
+            if (typeof showHawnSkillEffect === 'function') showHawnSkillEffect();
             applyDamage(target, Math.floor(damage * 5.0));
         } else if (attacker.name === '탄지로') {
             bData.eTeam.forEach(e => { if(e.curHP > 0) applyDamage(e, Math.floor(damage * 2.8)); });
@@ -768,18 +765,17 @@ function attack(target) {
             const frontAlive = bData.eTeam.some(e => e.pos === 'front' && e.curHP > 0);
             bData.eTeam.forEach(e => {
                 if (frontAlive) {
-                    if (e.pos === 'front' && e.curHP > 0) applyDamage(e, Math.floor(damage * 3.2));
+                    if (e.pos === 'front' && e.curHP > 0) applyDamage(e, Math.floor(damage * 3.5));
                 } else {
-                    if (e.curHP > 0) applyDamage(e, Math.floor(damage * 3.2));
+                    if (e.curHP > 0) applyDamage(e, Math.floor(damage * 3.5));
                 }
             });
         } else if (attacker.name === '빅딜') {
-            // [조정] 빅딜 궁극기 단일 타격 2.5배 (사기 방지)
-            applyDamage(target, Math.floor(damage * 2.5));
+            applyDamage(target, Math.floor(damage * 3.0));
         } else if (attacker.name === '검객') {
-            bData.eTeam.forEach(e => { if(e.curHP > 0) applyDamage(e, Math.floor(damage * 1.8)); });
+            bData.eTeam.forEach(e => { if(e.curHP > 0) applyDamage(e, Math.floor(damage * 2.2)); });
         } else {
-            applyDamage(target, Math.floor(damage * 2.0));
+            applyDamage(target, Math.floor(damage * 2.5));
         }
     } else {
         // 일반 공격 타겟 자동 보정
@@ -790,18 +786,18 @@ function attack(target) {
         if (finalTarget) applyDamage(finalTarget, damage);
     }
 
-    // ⭐ 4. 빅딜 성급별 부활 체크 (턴 종료 직전 실행)
+    // ⭐ 4. 빅딜 및 검객 성급별 부활 체크
     bData.pTeam.forEach(hero => {
-        if (hero.name.includes('빅딜') && hero.curHP <= 0 && !hero.hasRevived) {
-            const star = hero.star || 0;
-            // 유저님 요청 수치: 0~1성(20%), 2성(40%), 3성(60%)
+        const isReviver = hero.name.includes('빅딜') || hero.name.includes('검객');
+        if (isReviver && hero.curHP <= 0 && !hero.hasRevived) {
+            const star = hero.star || 1;
             let revivePercent = 0.2;
             if (star === 2) revivePercent = 0.4;
             else if (star >= 3) revivePercent = 0.6;
 
             hero.curHP = Math.floor(hero.maxHP * revivePercent);
             hero.hasRevived = true;
-            log(`✨ <b style="color: #00ffcc;">[부활]</b> <b>빅딜(${star}성)</b>이 체력 ${Math.round(revivePercent * 100)}%로 일어났습니다!`);
+            log(`✨ <b style="color: #00ffcc;">[부활]</b> <b>${hero.name}(${star}성)</b>이 체력 ${Math.round(revivePercent * 100)}%로 일어났습니다!`);
         }
     });
 
@@ -813,8 +809,7 @@ function attack(target) {
     if (!checkEnd()) {
         setTimeout(nextTurn, 500); 
     }
-}
-// 이하원 필살기 시각 연출 (설명서)
+}// 이하원 필살기 시각 연출 (설명서)
 function showHawnSkillEffect() {
     // 1. 가운데 연하게 나타나는 컷인 효과
     const cutin = document.getElementById('skill-cutin');
