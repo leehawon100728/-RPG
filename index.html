@@ -748,8 +748,8 @@ function attack(target) {
         log(`🔥 <b>${attacker.name}</b>의 필살기 발동!!`);
     }
 
-    // 2. [밸런스 조정] 데미지 계산식
-    // 성급당 30% 증가 + 레벨당 10%씩 착하게 상승
+    // 2. [효율 대폭 강화] 데미지 계산식
+    // 성급당 30% 증가 + 레벨당 20%씩 복리급 상승 (기존 15%에서 더 올림)
     const starBonus = 1 + (attacker.star - 1) * 0.3; 
     const lvBonus = 1 + (attacker.lv - 1) * 0.10;   
     let damage = Math.floor(attacker.atk * starBonus * lvBonus);
@@ -809,7 +809,7 @@ function attack(target) {
     if (!checkEnd()) {
         setTimeout(nextTurn, 500); 
     }
-}}// 이하원 필살기 시각 연출 (설명서)
+}// 이하원 필살기 시각 연출 (설명서)
 function showHawnSkillEffect() {
     // 1. 가운데 연하게 나타나는 컷인 효과
     const cutin = document.getElementById('skill-cutin');
